@@ -24,10 +24,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipAddressHF import SipAddressHF
+from sipapy.SipAddressHF import SipAddressHF
+
 
 class SipDiversion(SipAddressHF):
     hf_names = ('diversion',)
 
-    def getCanName(self, name, compact = False):
+    def getCanName(self, name, compact=False):
         return 'Diversion'

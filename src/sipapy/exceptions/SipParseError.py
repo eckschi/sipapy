@@ -23,14 +23,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipReason import SipReason
-from sippy.SipHeader import SipHeader
+from sipapy.SipReason import SipReason
+from sipapy.SipHeader import SipHeader
+
 
 class SipParseError(Exception):
     sip_response = None
     arg = None
 
-    def __init__(self, arg, sip_response = None):
+    def __init__(self, arg, sip_response=None):
         super().__init__()
         self.arg = arg
         self.sip_response = sip_response
@@ -41,9 +42,11 @@ class SipParseError(Exception):
     def getResponse(self, req=None):
         return self.sip_response
 
+
 class SdpParseError(SipParseError):
     code = 488
     msg = 'Not Acceptable Here'
+
     def getResponse(self, req):
         if self.sip_response is not None:
             return self.sip_response
@@ -51,6 +54,6 @@ class SdpParseError(SipParseError):
         if self.arg is not None and len(self.arg) > 0:
             reason = SipReason(protocol='SIP', cause=self.code,
                                reason=self.arg)
-            rsh = SipHeader(body = reason)
+            rsh = SipHeader(body=reason)
             resp.appendHeader(rsh)
         return resp

@@ -24,19 +24,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipGenericHF import SipGenericHF
-from sippy.SipConf import SipConf
+from sipapy.SipGenericHF import SipGenericHF
+from sipapy.SipConf import SipConf
+
 
 class SipServer(SipGenericHF):
     hf_names = ('server',)
     name = None
 
-    def __init__(self, body = None, name = None):
+    def __init__(self, body=None, name=None):
         SipGenericHF.__init__(self, body)
         self.parsed = True
-        if body != None:
+        if body is not None:
             self.name = body
-        elif name != None:
+        elif name is not None:
             self.name = name
         else:
             self.name = SipConf.my_uaname
@@ -45,4 +46,4 @@ class SipServer(SipGenericHF):
         return self.name
 
     def getCopy(self):
-        return self.__class__(name = self.name)
+        return self.__class__(name=self.name)

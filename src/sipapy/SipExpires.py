@@ -24,10 +24,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipNumericHF import SipNumericHF
+from sipapy.SipNumericHF import SipNumericHF
+
 
 class SipExpires(SipNumericHF):
     hf_names = ('expires',)
 
-    def __init__(self, body = None, number = 300):
+    def __init__(self, body=None, number=300):
         SipNumericHF.__init__(self, body, number)

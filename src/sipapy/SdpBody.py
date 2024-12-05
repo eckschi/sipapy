@@ -24,17 +24,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SdpMediaDescription import SdpMediaDescription, a_header
-from sippy.SdpGeneric import SdpGeneric
-from sippy.SdpOrigin import SdpOrigin
-from sippy.SdpConnecton import SdpConnecton
+from sipapy.SdpMediaDescription import SdpMediaDescription, a_header
+from sipapy.SdpGeneric import SdpGeneric
+from sipapy.SdpOrigin import SdpOrigin
+from sipapy.SdpConnecton import SdpConnecton
 
-f_types = {'v':SdpGeneric, 'o':SdpOrigin, 's':SdpGeneric, 'i':SdpGeneric, \
-  'u':SdpGeneric, 'e':SdpGeneric, 'p':SdpGeneric, 'c':SdpConnecton, \
-  'b':SdpGeneric, 't':SdpGeneric, 'r':SdpGeneric, 'z':SdpGeneric, \
-  'k':SdpGeneric}
+f_types = {'v': SdpGeneric, 'o': SdpOrigin, 's': SdpGeneric, 'i': SdpGeneric,
+           'u': SdpGeneric, 'e': SdpGeneric, 'p': SdpGeneric, 'c': SdpConnecton,
+           'b': SdpGeneric, 't': SdpGeneric, 'r': SdpGeneric, 'z': SdpGeneric,
+           'k': SdpGeneric}
 
-class SdpBody(object):
+
+class SdpBody:
     v_header = None
     o_header = None
     s_header = None
@@ -51,16 +52,18 @@ class SdpBody(object):
     a_headers = None
     first_half = ('v', 'o', 's', 'i', 'u', 'e', 'p')
     second_half = ('b', 't', 'r', 'z', 'k')
-    all_headers = ('v', 'o', 's', 'i', 'u', 'e', 'p', 'c', 'b', 't', 'r', 'z', 'k')
+    all_headers = ('v', 'o', 's', 'i', 'u', 'e',
+                   'p', 'c', 'b', 't', 'r', 'z', 'k')
     top_hdrs_req = ('v', 'o', 's', 't')
     sect_hdrs_req = ('c', 'm')
     sections = None
 
-    def __init__(self, body = None, cself = None, ctype = None):
-        if cself != None:
+    def __init__(self, body=None, cself=None, ctype=None):
+        if cself is not None:
             for header_name in [x + '_header' for x in self.all_headers]:
                 try:
-                    setattr(self, header_name, getattr(cself, header_name).getCopy())
+                    setattr(self, header_name, getattr(
+                        cself, header_name).getCopy())
                 except AttributeError:
                     pass
             self.a_headers = [x.getCopy() for x in cself.a_headers]
@@ -70,7 +73,8 @@ class SdpBody(object):
         self.sections = []
         if body == None:
             return
-        avpairs = [x.split('=', 1) for x in body.strip().splitlines() if len(x.strip()) > 0]
+        avpairs = [x.split('=', 1)
+                   for x in body.strip().splitlines() if len(x.strip()) > 0]
         current_snum = 0
         c_header = None
         for name, v in avpairs:
@@ -87,7 +91,7 @@ class SdpBody(object):
                     setattr(self, name + '_header', f_types[name](v))
             else:
                 self.sections[-1].addHeader(name, v)
-        if c_header != None:
+        if c_header is not None:
             for section in self.sections:
                 if section.c_header == None:
                     section.addHeader('c', c_header)
@@ -96,34 +100,36 @@ class SdpBody(object):
         # Do some sanity checking, RFC4566
         for header_name in [x + '_header' for x in self.top_hdrs_req]:
             if getattr(self, header_name) == None:
-                raise Exception('Mandatory "%s=" session header is missing' % header_name[0])
+                raise Exception(
+                    'Mandatory "%s=" session header is missing' % header_name[0])
         for section in self.sections:
             for header_name in [x + '_header' for x in self.sect_hdrs_req]:
                 if getattr(section, header_name) == None:
-                    raise Exception('Mandatory "%s=" media header is missing' % header_name[0])
+                    raise Exception(
+                        'Mandatory "%s=" media header is missing' % header_name[0])
 
     def __str__(self):
         s = ''
-        if len(self.sections) == 1 and self.sections[0].c_header != None:
+        if len(self.sections) == 1 and self.sections[0].c_header is not None:
             for name in self.first_half:
                 header = getattr(self, name + '_header')
-                if header != None:
-                    s += '%s=%s\r\n' % (name, str(header))
+                if header is not None:
+                    s += '{}={}\r\n'.format(name, str(header))
             s += 'c=%s\r\n' % str(self.sections[0].c_header)
             for name in self.second_half:
                 header = getattr(self, name + '_header')
-                if header != None:
-                    s += '%s=%s\r\n' % (name, str(header))
+                if header is not None:
+                    s += '{}={}\r\n'.format(name, str(header))
             for header in self.a_headers:
                 s += 'a=%s\r\n' % str(header)
-            s += self.sections[0].localStr(noC = True)
+            s += self.sections[0].localStr(noC=True)
             return s
         # Special code to optimize for the cases when there are many media streams pointing to
         # the same IP. Only include c= header into the top section of the SDP and remove it from
         # the streams that match.
         optimize_c_headers = False
         if len(self.sections) > 1 and self.c_header == None and self.sections[0].c_header != None and \
-          str(self.sections[0].c_header) == str(self.sections[1].c_header):
+                str(self.sections[0].c_header) == str(self.sections[1].c_header):
             # Special code to optimize for the cases when there are many media streams pointing to
             # the same IP. Only include c= header into the top section of the SDP and remove it from
             # the streams that match.
@@ -132,76 +138,83 @@ class SdpBody(object):
         if optimize_c_headers:
             for name in self.first_half:
                 header = getattr(self, name + '_header')
-                if header != None:
-                    s += '%s=%s\r\n' % (name, str(header))
+                if header is not None:
+                    s += '{}={}\r\n'.format(name, str(header))
             s += 'c=%s\r\n' % sections_0_str
             for name in self.second_half:
                 header = getattr(self, name + '_header')
-                if header != None:
-                    s += '%s=%s\r\n' % (name, str(header))
+                if header is not None:
+                    s += '{}={}\r\n'.format(name, str(header))
         else:
             for name in self.all_headers:
                 header = getattr(self, name + '_header')
-                if header != None:
-                    s += '%s=%s\r\n' % (name, str(header))
+                if header is not None:
+                    s += '{}={}\r\n'.format(name, str(header))
         for header in self.a_headers:
             s += 'a=%s\r\n' % str(header)
         for section in self.sections:
             if optimize_c_headers and section.c_header != None and \
-              str(section.c_header) == sections_0_str:
-                s += section.localStr(noC = True)
+                    str(section.c_header) == sections_0_str:
+                s += section.localStr(noC=True)
             else:
                 s += str(section)
         return s
 
-    def localStr(self, local_addr = None, local_port = None):
+    def localStr(self, local_addr=None, local_port=None):
         s = ''
-        if len(self.sections) == 1 and self.sections[0].c_header != None:
+        if len(self.sections) == 1 and self.sections[0].c_header is not None:
             for name in self.first_half:
                 header = getattr(self, name + '_header')
-                if header != None:
-                    s += '%s=%s\r\n' % (name, header.localStr(local_addr, local_port))
-            s += 'c=%s\r\n' % self.sections[0].c_header.localStr(local_addr, local_port)
+                if header is not None:
+                    s += '{}={}\r\n'.format(name,
+                                            header.localStr(local_addr, local_port))
+            s += 'c=%s\r\n' % self.sections[0].c_header.localStr(
+                local_addr, local_port)
             for name in self.second_half:
                 header = getattr(self, name + '_header')
-                if header != None:
-                    s += '%s=%s\r\n' % (name, header.localStr(local_addr, local_port))
+                if header is not None:
+                    s += '{}={}\r\n'.format(name,
+                                            header.localStr(local_addr, local_port))
             for header in self.a_headers:
                 s += 'a=%s\r\n' % str(header)
-            s += self.sections[0].localStr(local_addr, local_port, noC = True)
+            s += self.sections[0].localStr(local_addr, local_port, noC=True)
             return s
         # Special code to optimize for the cases when there are many media streams pointing to
         # the same IP. Only include c= header into the top section of the SDP and remove it from
         # the streams that match.
         optimize_c_headers = False
         if len(self.sections) > 1 and self.c_header == None and self.sections[0].c_header != None and \
-          self.sections[0].c_header.localStr(local_addr, local_port) == self.sections[1].c_header.localStr(local_addr, local_port):
+                self.sections[0].c_header.localStr(local_addr, local_port) == self.sections[1].c_header.localStr(local_addr, local_port):
             # Special code to optimize for the cases when there are many media streams pointing to
             # the same IP. Only include c= header into the top section of the SDP and remove it from
             # the streams that match.
             optimize_c_headers = True
-            sections_0_str = self.sections[0].c_header.localStr(local_addr, local_port)
+            sections_0_str = self.sections[0].c_header.localStr(
+                local_addr, local_port)
         if optimize_c_headers:
             for name in self.first_half:
                 header = getattr(self, name + '_header')
-                if header != None:
-                    s += '%s=%s\r\n' % (name, header.localStr(local_addr, local_port))
+                if header is not None:
+                    s += '{}={}\r\n'.format(name,
+                                            header.localStr(local_addr, local_port))
             s += 'c=%s\r\n' % sections_0_str
             for name in self.second_half:
                 header = getattr(self, name + '_header')
-                if header != None:
-                    s += '%s=%s\r\n' % (name, header.localStr(local_addr, local_port))
+                if header is not None:
+                    s += '{}={}\r\n'.format(name,
+                                            header.localStr(local_addr, local_port))
         else:
             for name in self.all_headers:
                 header = getattr(self, name + '_header')
-                if header != None:
-                    s += '%s=%s\r\n' % (name, header.localStr(local_addr, local_port))
+                if header is not None:
+                    s += '{}={}\r\n'.format(name,
+                                            header.localStr(local_addr, local_port))
         for header in self.a_headers:
             s += 'a=%s\r\n' % str(header)
         for section in self.sections:
             if optimize_c_headers and section.c_header != None and \
-              section.c_header.localStr(local_addr, local_port) == sections_0_str:
-                s += section.localStr(local_addr, local_port, noC = True)
+                    section.c_header.localStr(local_addr, local_port) == sections_0_str:
+                s += section.localStr(local_addr, local_port, noC=True)
             else:
                 s += section.localStr(local_addr, local_port)
         return s
@@ -214,7 +227,7 @@ class SdpBody(object):
         return self
 
     def getCopy(self):
-        return SdpBody(cself = self)
+        return SdpBody(cself=self)
 
     def addHeader(self, name, header):
         if name == 'a':

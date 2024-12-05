@@ -24,13 +24,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipFrom import SipFrom
+from sipapy.SipFrom import SipFrom
+
 
 class SipTo(SipFrom):
     hf_names = ('to', 't')
     relaxedparser = True
 
-    def getCanName(self, name, compact = False):
+    def getCanName(self, name, compact=False):
         if compact:
             return 't'
         return 'To'

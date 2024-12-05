@@ -25,13 +25,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-class SdpConnecton(object):
+class SdpConnecton:
     ntype = None
     atype = None
     addr = None
 
-    def __init__(self, body = None, cself = None):
-        if body != None:
+    def __init__(self, body=None, cself=None):
+        if body is not None:
             self.ntype, self.atype, self.addr = body.split()[:3]
         else:
             self.ntype = cself.ntype
@@ -39,10 +39,10 @@ class SdpConnecton(object):
             self.addr = cself.addr
 
     def __str__(self):
-        return '%s %s %s' % (self.ntype, self.atype, self.addr)
+        return '{} {} {}'.format(self.ntype, self.atype, self.addr)
 
-    def localStr(self, local_addr = None, local_port = None):
-        return '%s %s %s' % (self.ntype, self.atype, self.addr)
+    def localStr(self, local_addr=None, local_port=None):
+        return '{} {} {}'.format(self.ntype, self.atype, self.addr)
 
     def getCopy(self):
-        return SdpConnecton(cself = self)
+        return SdpConnecton(cself=self)

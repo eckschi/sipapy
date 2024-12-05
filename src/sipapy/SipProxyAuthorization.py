@@ -24,10 +24,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipAuthorization import SipAuthorization
+from sipapy.SipAuthorization import SipAuthorization
+
 
 class SipProxyAuthorization(SipAuthorization):
     hf_names = ('proxy-authorization',)
 
-    def getCanName(self, name, compact = False):
+    def getCanName(self, name, compact=False):
         return 'Proxy-Authorization'

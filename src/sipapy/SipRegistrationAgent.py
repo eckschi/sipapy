@@ -24,16 +24,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.Time.Timeout import Timeout
-from sippy.SipURL import SipURL
-from sippy.SipTo import SipTo
-from sippy.SipFrom import SipFrom
-from sippy.SipAddress import SipAddress
-from sippy.SipContact import SipContact
-from sippy.SipRequest import SipRequest
-from sippy.SipHeader import SipHeader
+from sipapy.Time.Timeout import Timeout
+from sipapy.SipURL import SipURL
+from sipapy.SipTo import SipTo
+from sipapy.SipFrom import SipFrom
+from sipapy.SipAddress import SipAddress
+from sipapy.SipContact import SipContact
+from sipapy.SipRequest import SipRequest
+from sipapy.SipHeader import SipHeader
 
-class SipRegistrationAgent(object):
+
+class SipRegistrationAgent:
     global_config = None
     user = None
     passw = None
@@ -42,7 +43,7 @@ class SipRegistrationAgent(object):
     atries = 0
     source_address = None
 
-    def __init__(self, global_config, aor, contact, user = None, passw = None, exp = 180, rok_cb = None, rfail_cb = None, cb_arg = None, target = None):
+    def __init__(self, global_config, aor, contact, user=None, passw=None, exp=180, rok_cb=None, rfail_cb=None, cb_arg=None, target=None):
         self.global_config = global_config
         self.user = user
         self.passw = passw
@@ -52,19 +53,20 @@ class SipRegistrationAgent(object):
         ruri = aor.getCopy()
         ruri.username = None
         aor.port = None
-        tfaddr = SipAddress(url = aor)
-        fr0m = SipFrom(address = tfaddr.getCopy())
+        tfaddr = SipAddress(url=aor)
+        fr0m = SipFrom(address=tfaddr.getCopy())
         fr0m.genTag()
-        to = SipTo(address = tfaddr)
-        contact = SipContact(address = SipAddress(url = contact))
+        to = SipTo(address=tfaddr)
+        contact = SipContact(address=SipAddress(url=contact))
         contact.address.params['expires'] = '180'
-        self.rmsg = SipRequest(method = 'REGISTER', ruri = ruri, fr0m = fr0m, contact = contact, to = to, target = target)
+        self.rmsg = SipRequest(method='REGISTER', ruri=ruri,
+                               fr0m=fr0m, contact=contact, to=to, target=target)
 
     def doregister(self):
         if self.dead:
             return
-        self.global_config['_sip_tm'].newTransaction(self.rmsg, self.gotreply, \
-          laddress = self.source_address)
+        self.global_config['_sip_tm'].newTransaction(self.rmsg, self.gotreply,
+                                                     laddress=self.source_address)
         self.rmsg.getHFBody('via').genBranch()
         self.rmsg.getHFBody('cseq').incCSeqNum()
 
@@ -88,7 +90,7 @@ class SipRegistrationAgent(object):
             else:
                 tout = 180
             timer = Timeout(self.doregister, tout)
-            if self.rok_cb != None:
+            if self.rok_cb is not None:
                 self.rok_cb(timer.etime.realt, contact, self.cb_arg)
             self.atries = 0
             return
@@ -107,11 +109,11 @@ class SipRegistrationAgent(object):
                                            str(self.rmsg.ruri), qop=qop)
                 for authorization in self.rmsg.getHFs(rhn):
                     self.rmsg.removeHeader(authorization)
-                self.rmsg.appendHeader(SipHeader(name = rhn, body = auth))
+                self.rmsg.appendHeader(SipHeader(name=rhn, body=auth))
                 self.atries += 1
                 self.doregister()
                 return
-        if self.rfail_cb != None:
+        if self.rfail_cb is not None:
             self.rfail_cb(resp.getSL(), self.cb_arg)
         Timeout(self.doregister, 60)
         self.atries = 0

@@ -24,15 +24,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipHeader import SipHeader
-from sippy.SipContentLength import SipContentLength
-from sippy.SipContentType import SipContentType
-from sippy.MsgBody import MsgBody
-from sippy.ESipHeaderCSV import ESipHeaderCSV
-from sippy.ESipHeaderIgnore import ESipHeaderIgnore
-from sippy.Exceptions.SipParseError import SipParseError
+from sipapy.SipHeader import SipHeader
+from sipapy.SipContentLength import SipContentLength
+from sipapy.SipContentType import SipContentType
+from sipapy.MsgBody import MsgBody
+from sipapy.ESipHeaderCSV import ESipHeaderCSV
+from sipapy.ESipHeaderIgnore import ESipHeaderIgnore
+from sipapy.Exceptions.SipParseError import SipParseError
 
-class SipMsg(object):
+
+class SipMsg:
     headers = None
     body = None
     startline = None
@@ -41,7 +42,7 @@ class SipMsg(object):
     nated = False
     rtime = None
 
-    def __init__(self, buf = None):
+    def __init__(self, buf=None):
         self.headers = []
         if buf == None:
             return
@@ -71,7 +72,7 @@ class SipMsg(object):
         header_names = []
         for line in lines[1:]:
             try:
-                header = SipHeader(line, fixname = True)
+                header = SipHeader(line, fixname=True)
                 if header.name == 'content-type':
                     self.__content_type = header
                 elif header.name == 'content-length':
@@ -81,7 +82,7 @@ class SipMsg(object):
                     header_names.append(header.name)
             except ESipHeaderCSV as einst:
                 for body in einst.bodys:
-                    header = SipHeader(name = einst.name, bodys = body)
+                    header = SipHeader(name=einst.name, bodys=body)
                     if header.name == 'content-type':
                         self.__content_type = header
                     elif header.name == 'content-length':
@@ -101,7 +102,7 @@ class SipMsg(object):
             raise Exception('CSeq HF is missed')
 
     def init_body(self):
-        if self.__content_length != None:
+        if self.__content_length is not None:
             blen = self.__content_length.getBody().number
             if self.__mbody == None:
                 mblen = 0
@@ -113,38 +114,45 @@ class SipMsg(object):
             elif self.__mbody == None:
                 # XXX: Should generate 400 Bad Request if such condition
                 # happens with request
-                raise SipParseError('Missed SIP body, %d bytes expected' % blen)
+                raise SipParseError(
+                    'Missed SIP body, %d bytes expected' % blen)
             elif blen > mblen:
                 if blen - mblen < 7 and mblen > 7 and self.__mbody[-4:] == '\r\n\r\n':
                     # XXX: we should not really be doing this, but it appears to be
                     # a common off-by-one/two/.../six problem with SDPs generates by
                     # the consumer-grade devices.
-                    print('Truncated SIP body, %d bytes expected, %d received, fixing...' % (blen, mblen))
+                    print('Truncated SIP body, %d bytes expected, %d received, fixing...' % (
+                        blen, mblen))
                     blen = mblen
                 elif blen - mblen == 2 and self.__mbody[-2:] == '\r\n':
                     # Missed last 2 \r\n is another common problem.
-                    print('Truncated SIP body, %d bytes expected, %d received, fixing...' % (blen, mblen))
+                    print('Truncated SIP body, %d bytes expected, %d received, fixing...' % (
+                        blen, mblen))
                     self.__mbody += '\r\n'
                 elif blen - mblen == 1 and self.__mbody[-3:] == '\r\n\n':
                     # Another possible mishap
-                    print('Truncated SIP body, %d bytes expected, %d received, fixing...' % (blen, mblen))
+                    print('Truncated SIP body, %d bytes expected, %d received, fixing...' % (
+                        blen, mblen))
                     self.__mbody = self.__mbody[:-3] + '\r\n\r\n'
                 elif blen - mblen == 1 and self.__mbody[-2:] == '\r\n':
                     # One more
-                    print('Truncated SIP body, %d bytes expected, %d received, fixing...' % (blen, mblen))
+                    print('Truncated SIP body, %d bytes expected, %d received, fixing...' % (
+                        blen, mblen))
                     self.__mbody += '\r\n'
                     blen += 1
                     mblen += 2
                 else:
                     # XXX: Should generate 400 Bad Request if such condition
                     # happens with request
-                    raise SipParseError('Truncated SIP body, %d bytes expected, %d received' % (blen, mblen))
+                    raise SipParseError(
+                        'Truncated SIP body, %d bytes expected, %d received' % (blen, mblen))
             elif blen < mblen:
                 self.__mbody = self.__mbody[:blen]
                 mblen = blen
-        if self.__mbody != None:
-            if self.__content_type != None:
-                self.body = MsgBody(self.__mbody, self.__content_type.getBody())
+        if self.__mbody is not None:
+            if self.__content_type is not None:
+                self.body = MsgBody(
+                    self.__mbody, self.__content_type.getBody())
             else:
                 self.body = MsgBody(self.__mbody)
 
@@ -152,7 +160,7 @@ class SipMsg(object):
         s = self.getSL() + '\r\n'
         for header in self.headers:
             s += str(header) + '\r\n'
-        if self.body != None:
+        if self.body is not None:
             mbody = str(self.body)
             s += 'Content-Type: %s\r\n' % self.body.mtype
             s += 'Content-Length: %d\r\n\r\n' % len(mbody)
@@ -161,11 +169,11 @@ class SipMsg(object):
             s += 'Content-Length: 0\r\n\r\n'
         return s
 
-    def localStr(self, local_addr = None, local_port = None, compact = False):
+    def localStr(self, local_addr=None, local_port=None, compact=False):
         s = self.getSL() + '\r\n'
         for header in self.headers:
             s += header.localStr(local_addr, local_port, compact) + '\r\n'
-        if self.body != None:
+        if self.body is not None:
             mbody = self.body.localStr(local_addr, local_port)
             if compact:
                 s += 'c: %s\r\n' % self.body.mtype
@@ -202,13 +210,13 @@ class SipMsg(object):
     def getHFBodys(self, name):
         return [x.getBody() for x in self.headers if x.name == name]
 
-    def getHFBody(self, name, idx = 0):
+    def getHFBody(self, name, idx=0):
         return [x for x in self.headers if x.name == name][idx].getBody()
 
     def getHFBCopys(self, name):
         return [x.getBCopy() for x in self.headers if x.name == name]
 
-    def getHFBCopy(self, name, idx = 0):
+    def getHFBCopy(self, name, idx=0):
         return [x for x in self.headers if x.name == name][idx].getBCopy()
 
     def replaceHeader(self, oheader, nheader):
@@ -247,10 +255,12 @@ class SipMsg(object):
     def setSource(self, address):
         self.source = address
 
-    def getTId(self, wCSM = False, wBRN = False, wTTG = False):
-        headers_dict = dict([(x.name, x) for x in self.headers if x.name in ('cseq', 'call-id', 'from')])
+    def getTId(self, wCSM=False, wBRN=False, wTTG=False):
+        headers_dict = {x.name: x for x in self.headers if x.name in (
+            'cseq', 'call-id', 'from')}
         cseq, method = headers_dict['cseq'].getBody().getCSeq()
-        rval = [str(headers_dict['call-id'].getBody()), headers_dict['from'].getBody().getTag(), cseq]
+        rval = [str(headers_dict['call-id'].getBody()),
+                headers_dict['from'].getBody().getTag(), cseq]
         if wCSM:
             rval.append(method)
         if wBRN:
@@ -260,7 +270,8 @@ class SipMsg(object):
         return tuple(rval)
 
     def getTIds(self):
-        headers_dict = dict([(x.name, x) for x in self.headers if x.name in ('cseq', 'call-id', 'from')])
+        headers_dict = {x.name: x for x in self.headers if x.name in (
+            'cseq', 'call-id', 'from')}
         call_id = str(headers_dict['call-id'].getBody())
         ftag = headers_dict['from'].getBody().getTag()
         cseq, method = headers_dict['cseq'].getBody().getCSeq()
@@ -270,7 +281,7 @@ class SipMsg(object):
         cself = self.__class__()
         for header in self.headers:
             cself.appendHeader(header.getCopy())
-        if self.body != None:
+        if self.body is not None:
             cself.body = self.body.getCopy()
         cself.startline = self.startline
         cself.target = self.target

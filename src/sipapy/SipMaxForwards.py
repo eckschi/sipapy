@@ -24,13 +24,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipNumericHF import SipNumericHF
+from sipapy.SipNumericHF import SipNumericHF
+
 
 class SipMaxForwards(SipNumericHF):
     hf_names = ('max-forwards',)
 
-    def __init__(self, body = None, number = 70):
+    def __init__(self, body=None, number=70):
         SipNumericHF.__init__(self, body, number)
 
-    def getCanName(self, name, compact = False):
+    def getCanName(self, name, compact=False):
         return 'Max-Forwards'

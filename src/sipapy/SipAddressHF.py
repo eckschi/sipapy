@@ -24,28 +24,29 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipGenericHF import SipGenericHF
-from sippy.SipAddress import SipAddress
-from sippy.ESipHeaderCSV import ESipHeaderCSV
+from sipapy.SipGenericHF import SipGenericHF
+from sipapy.SipAddress import SipAddress
+from sipapy.ESipHeaderCSV import ESipHeaderCSV
+
 
 class SipAddressHF(SipGenericHF):
     address = None
     relaxedparser = False
 
-    def __init__(self, body = None, address = None):
+    def __init__(self, body=None, address=None):
         SipGenericHF.__init__(self, body)
-        if body != None:
+        if body is not None:
             csvs = []
             pidx = 0
             while 1:
                 idx = body.find(',', pidx)
                 if idx == -1:
-                    break;
+                    break
                 onum = body[:idx].count('<')
                 cnum = body[:idx].count('>')
                 qnum = body[:idx].count('"')
-                if (onum == 0 and cnum == 0 and qnum == 0) or (onum > 0 and \
-                  onum == cnum and (qnum % 2 == 0)):
+                if (onum == 0 and cnum == 0 and qnum == 0) or (onum > 0 and
+                                                               onum == cnum and (qnum % 2 == 0)):
                     csvs.append(body[:idx])
                     body = body[idx + 1:]
                     pidx = 0
@@ -59,13 +60,13 @@ class SipAddressHF(SipGenericHF):
             self.address = address
 
     def parse(self):
-        self.address = SipAddress(self.body, relaxedparser = self.relaxedparser)
+        self.address = SipAddress(self.body, relaxedparser=self.relaxedparser)
         self.parsed = True
 
     def __str__(self):
         return self.localStr()
 
-    def localStr(self, local_addr = None, local_port = None):
+    def localStr(self, local_addr=None, local_port=None):
         if not self.parsed:
             return self.body
         return self.address.localStr(local_addr, local_port)
@@ -74,7 +75,7 @@ class SipAddressHF(SipGenericHF):
         if not self.parsed:
             oret = self.__class__(self.body)
         else:
-            oret = self.__class__(address = self.address.getCopy())
+            oret = self.__class__(address=self.address.getCopy())
         oret.relaxedparser = self.relaxedparser
         return oret
 

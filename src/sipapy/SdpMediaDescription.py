@@ -24,14 +24,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SdpConnecton import SdpConnecton
-from sippy.SdpMedia import SdpMedia
-from sippy.SdpGeneric import SdpGeneric
+from sipapy.SdpConnecton import SdpConnecton
+from sipapy.SdpMedia import SdpMedia
+from sipapy.SdpGeneric import SdpGeneric
 
-f_types = {'m':SdpMedia, 'i':SdpGeneric, 'c':SdpConnecton, 'b':SdpGeneric, \
-  'k':SdpGeneric}
+f_types = {'m': SdpMedia, 'i': SdpGeneric, 'c': SdpConnecton, 'b': SdpGeneric,
+           'k': SdpGeneric}
 
-class a_header(object):
+
+class a_header:
     name = None
     value = None
 
@@ -48,12 +49,13 @@ class a_header(object):
     def __str__(self):
         if self.value is None:
             return self.name
-        return '%s:%s' % (self.name, self.value)
+        return '{}:{}'.format(self.name, self.value)
 
     def getCopy(self):
         return a_header(self)
 
-class SdpMediaDescription(object):
+
+class SdpMediaDescription:
     m_header = None
     i_header = None
     c_header = None
@@ -63,11 +65,12 @@ class SdpMediaDescription(object):
     all_headers = ('m', 'i', 'c', 'b', 'k')
     needs_update = True
 
-    def __init__(self, cself = None):
-        if cself != None:
+    def __init__(self, cself=None):
+        if cself is not None:
             for header_name in [x + '_header' for x in self.all_headers]:
                 try:
-                    setattr(self, header_name, getattr(cself, header_name).getCopy())
+                    setattr(self, header_name, getattr(
+                        cself, header_name).getCopy())
                 except AttributeError:
                     pass
             self.a_headers = [x.getCopy() for x in cself.a_headers]
@@ -78,20 +81,21 @@ class SdpMediaDescription(object):
         s = ''
         for name in self.all_headers:
             header = getattr(self, name + '_header')
-            if header != None:
-                s += '%s=%s\r\n' % (name, str(header))
+            if header is not None:
+                s += '{}={}\r\n'.format(name, str(header))
         for header in self.a_headers:
             s += 'a=%s\r\n' % str(header)
         return s
 
-    def localStr(self, local_addr = None, local_port = None, noC = False):
+    def localStr(self, local_addr=None, local_port=None, noC=False):
         s = ''
         for name in self.all_headers:
             if noC and name == 'c':
                 continue
             header = getattr(self, name + '_header')
-            if header != None:
-                s += '%s=%s\r\n' % (name, header.localStr(local_addr, local_port))
+            if header is not None:
+                s += '{}={}\r\n'.format(name,
+                                        header.localStr(local_addr, local_port))
         for header in self.a_headers:
             s += 'a=%s\r\n' % str(header)
         return s
@@ -101,7 +105,7 @@ class SdpMediaDescription(object):
         return self
 
     def getCopy(self):
-        return SdpMediaDescription(cself = self)
+        return SdpMediaDescription(cself=self)
 
     def addHeader(self, name, header):
         if name == 'a':
@@ -110,12 +114,12 @@ class SdpMediaDescription(object):
             setattr(self, name + '_header', f_types[name](header))
 
     def insertHeader(self, indx, name, header):
-        assert(name == 'a')
+        assert (name == 'a')
         self.a_headers.insert(indx, a_header(header))
 
     def optimize_a(self):
-        for ah in [x for x in self.a_headers if x.name in ('rtpmap', 'fmtp') and \
-          x.value is not None]:
+        for ah in [x for x in self.a_headers if x.name in ('rtpmap', 'fmtp') and
+                   x.value is not None]:
             try:
                 pt = int(ah.value.split(' ', 1)[0])
             except ValueError:
@@ -129,7 +133,7 @@ class SdpMediaDescription(object):
             return True
         if self.c_header.atype == 'IP6' and self.c_header.addr == '::':
             return True
-        if len([1 for x in self.a_headers if x.value is None and \
-          x.name in ('sendonly', 'inactive')]) > 0:
+        if len([1 for x in self.a_headers if x.value is None and
+                x.name in ('sendonly', 'inactive')]) > 0:
             return True
         return False

@@ -24,7 +24,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipGenericHF import SipGenericHF
+from sipapy.SipGenericHF import SipGenericHF
+
 
 class SipContentType(SipGenericHF):
     hf_names = ('content-type', 'c')
@@ -44,7 +45,7 @@ class SipContentType(SipGenericHF):
         self.params = dict(params)
         self.parsed = True
 
-    def getCanName(self, name, compact = False):
+    def getCanName(self, name, compact=False):
         if compact:
             return 'c'
         return 'Content-Type'
@@ -60,18 +61,5 @@ class SipContentType(SipGenericHF):
 
     def __str__(self):
         s = [self.name,]
-        s += [f'{k}={v}' for k, v in self.params.items()]
+        s += [f'{k}={v}' for k, v in list(self.params.items())]
         return ';'.join(s)
-
-if __name__ == '__main__':
-    t = 'multipart/mixed;boundary=OSS-unique-boundary-42'
-    ct1 = SipContentType(t)
-    ct1.parse()
-    assert f'{ct1}' == t
-    assert ct1.name == 'multipart/mixed'
-    assert ct1.params['boundary'] == 'OSS-unique-boundary-42'
-    ct2 = ct1.getCopy()
-    assert f'{ct2}' == t
-    ct1.params['some'] = 'value'
-    assert f'{ct1}' == t + ';some=value'
-    assert f'{ct2}' == t

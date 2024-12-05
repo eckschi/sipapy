@@ -24,8 +24,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipMsg import SipMsg
-from sippy.SipHeader import SipHeader
+from sipapy.SipMsg import SipMsg
+from sipapy.SipHeader import SipHeader
+
 
 class SipResponse(SipMsg):
     scode = None
@@ -33,24 +34,25 @@ class SipResponse(SipMsg):
     sipver = None
     lossemul = 0
 
-    def __init__(self, buf = None, scode = None, reason = None, sipver = None, to = None, fr0m = None, callid = None, vias = None,
-                 cseq = None, body = None, rrs = (), server = None):
+    def __init__(self, buf=None, scode=None, reason=None, sipver=None, to=None, fr0m=None, callid=None, vias=None,
+                 cseq=None, body=None, rrs=(), server=None):
         SipMsg.__init__(self, buf)
-        if buf != None:
+        if buf is not None:
             if self.scode > 100 and self.scode < 400:
                 SipMsg.init_body(self)
             return
         self.scode, self.reason, self.sipver = scode, reason, sipver
-        if vias != None:
-            self.appendHeaders([SipHeader(name = 'via', body = x) for x in vias])
-            self.appendHeaders([SipHeader(name = 'record-route', body = x) for x in rrs])
-            self.appendHeader(SipHeader(name = 'from', body = fr0m))
-            self.appendHeader(SipHeader(name = 'to', body = to))
-            self.appendHeader(SipHeader(name = 'call-id', body = callid))
-            self.appendHeader(SipHeader(name = 'cseq', body = cseq))
-        if server != None:
-            self.appendHeader(SipHeader(name = 'server', bodys = server))
-        if body != None:
+        if vias is not None:
+            self.appendHeaders([SipHeader(name='via', body=x) for x in vias])
+            self.appendHeaders(
+                [SipHeader(name='record-route', body=x) for x in rrs])
+            self.appendHeader(SipHeader(name='from', body=fr0m))
+            self.appendHeader(SipHeader(name='to', body=to))
+            self.appendHeader(SipHeader(name='call-id', body=callid))
+            self.appendHeader(SipHeader(name='cseq', body=cseq))
+        if server is not None:
+            self.appendHeader(SipHeader(name='server', bodys=server))
+        if body is not None:
             self.setBody(body)
 
     def setSL(self, startline):

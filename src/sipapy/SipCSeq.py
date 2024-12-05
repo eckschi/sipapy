@@ -24,19 +24,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipGenericHF import SipGenericHF
+from sipapy.SipGenericHF import SipGenericHF
+
 
 class SipCSeq(SipGenericHF):
     hf_names = ('cseq',)
     cseq = None
     method = None
 
-    def __init__(self, body = None, cseq = None, method = None):
+    def __init__(self, body=None, cseq=None, method=None):
         SipGenericHF.__init__(self, body)
         if body == None:
             self.parsed = True
             self.method = method
-            if cseq != None:
+            if cseq is not None:
                 self.cseq = cseq
             else:
                 self.cseq = 1
@@ -63,9 +64,9 @@ class SipCSeq(SipGenericHF):
     def getCopy(self):
         if not self.parsed:
             return SipCSeq(self.body)
-        return SipCSeq(cseq = self.cseq, method = self.method)
+        return SipCSeq(cseq=self.cseq, method=self.method)
 
-    def getCanName(self, name, compact = False):
+    def getCanName(self, name, compact=False):
         return 'CSeq'
 
     def incCSeqNum(self):

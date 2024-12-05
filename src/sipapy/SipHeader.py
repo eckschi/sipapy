@@ -24,46 +24,46 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipGenericHF import SipGenericHF
-from sippy.SipCSeq import SipCSeq
-from sippy.SipCallId import SipCallId
-from sippy.SipFrom import SipFrom
-from sippy.SipTo import SipTo
-from sippy.SipMaxForwards import SipMaxForwards
-from sippy.SipVia import SipVia
-from sippy.SipContentLength import SipContentLength
-from sippy.SipContentType import SipContentType
-from sippy.SipExpires import SipExpires
-from sippy.SipRecordRoute import SipRecordRoute
-from sippy.SipRoute import SipRoute
-from sippy.SipContact import SipContact
-from sippy.SipWWWAuthenticate import SipWWWAuthenticate
-from sippy.SipAuthorization import SipAuthorization
-from sippy.SipServer import SipServer
-from sippy.SipUserAgent import SipUserAgent
-from sippy.SipCiscoGUID import SipCiscoGUID
-from sippy.SipAlso import SipAlso
-from sippy.SipReferTo import SipReferTo
-from sippy.SipCCDiversion import SipCCDiversion
-from sippy.SipReferredBy import SipReferredBy
-from sippy.SipProxyAuthenticate import SipProxyAuthenticate
-from sippy.SipProxyAuthorization import SipProxyAuthorization
-from sippy.SipReplaces import SipReplaces
-from sippy.SipPAssertedIdentity import SipPAssertedIdentity
-from sippy.SipReason import SipReason
-from sippy.SipAllow import SipAllow
-from sippy.SipSupported import SipSupported
-from sippy.ESipHeaderCSV import ESipHeaderCSV
-from sippy.SipRSeq import SipRSeq
-from sippy.SipRAck import SipRAck
-from sippy.SipWarning import SipWarning
-from sippy.SipDiversion import SipDiversion
+from sipapy.SipGenericHF import SipGenericHF
+from sipapy.SipCSeq import SipCSeq
+from sipapy.SipCallId import SipCallId
+from sipapy.SipFrom import SipFrom
+from sipapy.SipTo import SipTo
+from sipapy.SipMaxForwards import SipMaxForwards
+from sipapy.SipVia import SipVia
+from sipapy.SipContentLength import SipContentLength
+from sipapy.SipContentType import SipContentType
+from sipapy.SipExpires import SipExpires
+from sipapy.SipRecordRoute import SipRecordRoute
+from sipapy.SipRoute import SipRoute
+from sipapy.SipContact import SipContact
+from sipapy.SipWWWAuthenticate import SipWWWAuthenticate
+from sipapy.SipAuthorization import SipAuthorization
+from sipapy.SipServer import SipServer
+from sipapy.SipUserAgent import SipUserAgent
+from sipapy.SipCiscoGUID import SipCiscoGUID
+from sipapy.SipAlso import SipAlso
+from sipapy.SipReferTo import SipReferTo
+from sipapy.SipCCDiversion import SipCCDiversion
+from sipapy.SipReferredBy import SipReferredBy
+from sipapy.SipProxyAuthenticate import SipProxyAuthenticate
+from sipapy.SipProxyAuthorization import SipProxyAuthorization
+from sipapy.SipReplaces import SipReplaces
+from sipapy.SipPAssertedIdentity import SipPAssertedIdentity
+from sipapy.SipReason import SipReason
+from sipapy.SipAllow import SipAllow
+from sipapy.SipSupported import SipSupported
+from sipapy.ESipHeaderCSV import ESipHeaderCSV
+from sipapy.SipRSeq import SipRSeq
+from sipapy.SipRAck import SipRAck
+from sipapy.SipWarning import SipWarning
+from sipapy.SipDiversion import SipDiversion
 
-_hf_types = (SipCSeq, SipCallId, SipFrom, SipTo, SipMaxForwards, SipVia, SipContentLength, \
-             SipContentType, SipExpires, SipRecordRoute, SipRoute, SipContact, SipWWWAuthenticate, \
-             SipAuthorization, SipServer, SipUserAgent, SipCiscoGUID, SipAlso, SipReferTo, \
-             SipCCDiversion, SipReferredBy, SipProxyAuthenticate, SipProxyAuthorization, \
-             SipReplaces, SipPAssertedIdentity, SipReason, SipAllow, SipSupported, SipRSeq, \
+_hf_types = (SipCSeq, SipCallId, SipFrom, SipTo, SipMaxForwards, SipVia, SipContentLength,
+             SipContentType, SipExpires, SipRecordRoute, SipRoute, SipContact, SipWWWAuthenticate,
+             SipAuthorization, SipServer, SipUserAgent, SipCiscoGUID, SipAlso, SipReferTo,
+             SipCCDiversion, SipReferredBy, SipProxyAuthenticate, SipProxyAuthorization,
+             SipReplaces, SipPAssertedIdentity, SipReason, SipAllow, SipSupported, SipRSeq,
              SipRAck, SipWarning, SipDiversion)
 
 hf_types = {}
@@ -71,14 +71,15 @@ for hf_type in _hf_types:
     for hf_name in hf_type.hf_names:
         hf_types[hf_name] = hf_type
 
-class SipHeader(object):
+
+class SipHeader:
     name = None
     body = None
 
-    def __init__(self, s = None, name = None, body = None, bodys = None, fixname = False):
-        if s != None:
-            name, bodys = [x.strip() for x in s.split(':', 1)]
-        if name != None:
+    def __init__(self, s=None, name=None, body=None, bodys=None, fixname=False):
+        if s is not None:
+            name, bodys = (x.strip() for x in s.split(':', 1))
+        if name is not None:
             self.name = name.lower()
         if body == None:
             try:
@@ -98,9 +99,9 @@ class SipHeader(object):
     def __str__(self):
         return str(self.body.getCanName(self.name)) + ': ' + str(self.body)
 
-    def localStr(self, local_addr = None, local_port = None, compact = False):
+    def localStr(self, local_addr=None, local_port=None, compact=False):
         return str(self.body.getCanName(self.name, compact)) + ': ' + \
-          self.body.localStr(local_addr, local_port)
+            self.body.localStr(local_addr, local_port)
 
     def getBody(self):
         if not self.body.parsed:
@@ -111,5 +112,5 @@ class SipHeader(object):
         return self.body.getCopy()
 
     def getCopy(self):
-        cself = self.__class__(name = self.name, body = self.body.getCopy())
-        return cself 
+        cself = self.__class__(name=self.name, body=self.body.getCopy())
+        return cself

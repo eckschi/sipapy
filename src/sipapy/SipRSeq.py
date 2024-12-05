@@ -23,19 +23,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipNumericHF import SipNumericHF
+from sipapy.SipNumericHF import SipNumericHF
+
 
 class SipRSeq(SipNumericHF):
     hf_names = ('rseq',)
 
-    def __init__(self, body = None, number = 1):
+    def __init__(self, body=None, number=1):
         SipNumericHF.__init__(self, body, number)
 
-    def getCanName(self, name, compact = False):
+    def getCanName(self, name, compact=False):
         return 'RSeq'
 
+
 if __name__ == '__main__':
-    rs = SipRSeq(body = '50')
+    rs = SipRSeq(body='50')
     rs.parse()
     print(rs.number)
     rs.number = 100

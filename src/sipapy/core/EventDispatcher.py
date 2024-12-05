@@ -24,21 +24,24 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
 
+from past.builtins import cmp
 from functools import partial
 from datetime import datetime
 from heapq import heappush, heappop, heapify
 from threading import Lock
 from random import random
-import sys, traceback, signal
+import sys
+import traceback
+import signal
 from _thread import get_ident
-from sippy.Time.MonoTime import MonoTime
-from sippy.Core.Exceptions import dump_exception, StdException
+from sipapy.Time.MonoTime import MonoTime
+from sipapy.Core.Exceptions import dump_exception, StdException
 
 from elperiodic.ElPeriodic import ElPeriodic
 
-class EventListener(object):
+
+class EventListener:
     etime = None
     cb_with_ts = False
     randomize_runs = None
@@ -52,7 +55,7 @@ class EventListener(object):
         return self.etime < other.etime
 
     def cancel(self):
-        if self.ed != None:
+        if self.ed is not None:
             # Do not crash if cleanup() has already been called
             self.ed.twasted += 1
         self.cleanup()
@@ -73,13 +76,14 @@ class EventListener(object):
 
     def go(self):
         if self.ed.my_ident != get_ident():
-            print(datetime.now(), 'EventDispatcher2: Timer.go() from wrong thread, expect Bad Stuff[tm] to happen')
+            print(datetime.now(
+            ), 'EventDispatcher2: Timer.go() from wrong thread, expect Bad Stuff[tm] to happen')
             print('-' * 70)
-            traceback.print_stack(file = sys.stdout)
+            traceback.print_stack(file=sys.stdout)
             print('-' * 70)
             sys.stdout.flush()
         if not self.abs_time:
-            if self.randomize_runs != None:
+            if self.randomize_runs is not None:
                 ival = self.randomize_runs(self.ival)
             else:
                 ival = self.ival
@@ -91,7 +95,8 @@ class EventListener(object):
         heappush(self.ed.tlisteners, self)
         return
 
-class Singleton(object):
+
+class Singleton:
     '''Use to create a singleton'''
     __state_lock = Lock()
 
@@ -114,6 +119,7 @@ class Singleton(object):
     def __sinit__(self, *args, **kwds):
         pass
 
+
 class EventDispatcher2(Singleton):
     tlisteners = None
     slisteners = None
@@ -129,7 +135,7 @@ class EventDispatcher2(Singleton):
     elp = None
     bands = None
 
-    def __init__(self, freq = 100.0):
+    def __init__(self, freq=100.0):
         EventDispatcher2.state_lock.acquire()
         if EventDispatcher2.ed_inum != 0:
             EventDispatcher2.state_lock.release()
@@ -149,7 +155,7 @@ class EventDispatcher2(Singleton):
     def signal(self, signum, frame):
         self.signals_pending.append(signum)
 
-    def regTimer(self, timeout_cb, ival, nticks = 1, abs_time = False, *cb_params):
+    def regTimer(self, timeout_cb, ival, nticks=1, abs_time=False, *cb_params):
         self.last_ts = MonoTime()
         if nticks == 0:
             return
@@ -180,7 +186,7 @@ class EventDispatcher2(Singleton):
                 # Re-schedule periodic timer
                 if el.nticks > 1:
                     el.nticks -= 1
-                if el.randomize_runs != None:
+                if el.randomize_runs is not None:
                     ival = el.randomize_runs(el.ival)
                 else:
                     ival = el.ival
@@ -197,7 +203,8 @@ class EventDispatcher2(Singleton):
             except Exception as ex:
                 if isinstance(ex, SystemExit):
                     raise
-                dump_exception('EventDispatcher2: unhandled exception when processing timeout event')
+                dump_exception(
+                    'EventDispatcher2: unhandled exception when processing timeout event')
             if self.endloop:
                 return
             if cleanup:
@@ -231,7 +238,8 @@ class EventDispatcher2(Singleton):
                 except Exception as ex:
                     if isinstance(ex, SystemExit):
                         raise
-                    dump_exception('EventDispatcher2: unhandled exception when processing signal event')
+                    dump_exception(
+                        'EventDispatcher2: unhandled exception when processing signal event')
                 if self.endloop:
                     return
 
@@ -241,14 +249,16 @@ class EventDispatcher2(Singleton):
         except Exception as ex:
             if isinstance(ex, SystemExit):
                 raise
-            dump_exception('EventDispatcher2: unhandled exception when processing from-thread-call')
-        #print('dispatchThreadCallback dispatched', thread_cb, cb_params)
+            dump_exception(
+                'EventDispatcher2: unhandled exception when processing from-thread-call')
+        # print('dispatchThreadCallback dispatched', thread_cb, cb_params)
 
     def callFromThread(self, thread_cb, *cb_params):
-        self.elp.call_from_thread(self.dispatchThreadCallback, thread_cb, cb_params)
-        #print('EventDispatcher2.callFromThread completed', str(self), thread_cb, cb_params)
+        self.elp.call_from_thread(
+            self.dispatchThreadCallback, thread_cb, cb_params)
+        # print('EventDispatcher2.callFromThread completed', str(self), thread_cb, cb_params)
 
-    def loop(self, timeout = None, freq = None):
+    def loop(self, timeout=None, freq=None):
         if freq != None and self.bands[0][0] != freq:
             for fb in self.bands:
                 if fb[0] == freq:
@@ -260,7 +270,7 @@ class EventDispatcher2(Singleton):
             self.bands.insert(0, fb)
         self.endloop = False
         self.last_ts = MonoTime()
-        if timeout != None:
+        if timeout is not None:
             etime = self.last_ts.getOffsetCopy(timeout)
         while True:
             if len(self.signals_pending) > 0:
@@ -272,7 +282,8 @@ class EventDispatcher2(Singleton):
                 break
             if self.twasted * 2 > len(self.tlisteners):
                 # Clean-up removed timers when their share becomes more than 50%
-                self.tlisteners = [x for x in self.tlisteners if x.cb_func != None]
+                self.tlisteners = [
+                    x for x in self.tlisteners if x.cb_func != None]
                 heapify(self.tlisteners)
                 self.twasted = 0
             if (timeout != None and self.last_ts > etime) or self.endloop:
@@ -285,9 +296,10 @@ class EventDispatcher2(Singleton):
     def breakLoop(self, rval=0):
         self.endloop = True
         self.el_rval = rval
-        #print('breakLoop')
-        #import traceback
-        #import sys
-        #traceback.print_stack(file = sys.stdout)
+        # print('breakLoop')
+        # import traceback
+        # import sys
+        # traceback.print_stack(file = sys.stdout)
+
 
 ED2 = EventDispatcher2()

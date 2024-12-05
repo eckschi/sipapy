@@ -24,12 +24,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipNumericHF import SipNumericHF
+from sipapy.SipNumericHF import SipNumericHF
+
 
 class SipContentLength(SipNumericHF):
     hf_names = ('content-length', 'l')
 
-    def getCanName(self, name, compact = False):
+    def getCanName(self, name, compact=False):
         if compact:
             return 'l'
         return 'Content-Length'

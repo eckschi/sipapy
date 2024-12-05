@@ -27,26 +27,28 @@
 from random import random
 from hashlib import md5
 from time import time
-from sippy.SipGenericHF import SipGenericHF
+from sipapy.SipGenericHF import SipGenericHF
+
 
 class SipCiscoGUID(SipGenericHF):
     hf_names = ('cisco-guid', 'h323-conf-id')
     ciscoGUID = None
 
-    def __init__(self, body = None, ciscoGUID = None):
+    def __init__(self, body=None, ciscoGUID=None):
         SipGenericHF.__init__(self, body)
-        if body != None:
+        if body is not None:
             return
         self.parsed = True
-        if ciscoGUID != None:
+        if ciscoGUID is not None:
             self.ciscoGUID = ciscoGUID
         else:
             salt = str((random() * 1000000000) + time())
             s = md5(salt.encode()).hexdigest()
-            self.ciscoGUID = (int(s[0:8], 16), int(s[8:16], 16), int(s[16:24], 16), int(s[24:32], 16))
+            self.ciscoGUID = (int(s[0:8], 16), int(
+                s[8:16], 16), int(s[16:24], 16), int(s[24:32], 16))
 
     def parse(self):
-        self.ciscoGUID = tuple([int(x) for x in  self.body.split('-', 3)])
+        self.ciscoGUID = tuple([int(x) for x in self.body.split('-', 3)])
         self.parsed = True
 
     def __str__(self):
@@ -60,7 +62,7 @@ class SipCiscoGUID(SipGenericHF):
     def hexForm(self):
         return '%.8X %.8X %.8X %.8X' % self.ciscoGUID
 
-    def getCanName(self, name, compact = False):
+    def getCanName(self, name, compact=False):
         if name.lower() == 'h323-conf-id':
             return 'h323-conf-id'
         else:
@@ -69,4 +71,4 @@ class SipCiscoGUID(SipGenericHF):
     def getCopy(self):
         if not self.parsed:
             return SipCiscoGUID(self.body)
-        return SipCiscoGUID(ciscoGUID = self.ciscoGUID)
+        return SipCiscoGUID(ciscoGUID=self.ciscoGUID)

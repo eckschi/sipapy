@@ -24,13 +24,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.Signal import LogSignal
+from past.utils import old_div
+from sipapy.Signal import LogSignal
 from time import time, localtime, strftime
 from fcntl import flock, LOCK_EX, LOCK_UN
 from signal import SIGUSR1
 from threading import Thread, Condition
 
-import sys, os, syslog
+import sys
+import os
+import syslog
 from functools import reduce
 
 SIPLOG_DBUG = 0
@@ -38,6 +41,7 @@ SIPLOG_INFO = 1
 SIPLOG_WARN = 2
 SIPLOG_ERR = 3
 SIPLOG_CRIT = 4
+
 
 class AsyncLogger(Thread):
     log = None
@@ -75,11 +79,12 @@ class AsyncLogger(Thread):
         my_flock = flock
         try:
             my_flock(self.log, LOCK_EX)
-        except IOError as e:
+        except OSError as e:
             # Catch ENOTSUP
             if e.args[0] != 45:
                 raise e
-            my_flock = lambda x, y: None
+
+            def my_flock(x, y): return None
         try:
             self.log.write(obuf)
             self.log.flush()
@@ -104,6 +109,7 @@ class AsyncLogger(Thread):
     def closelog(self):
         del self.log
 
+
 class AsyncLoggerSyslog(AsyncLogger):
     def safe_open(self):
         try:
@@ -121,7 +127,8 @@ class AsyncLoggerSyslog(AsyncLogger):
     def closelog(self):
         syslog.closelog()
 
-class SipLogger(object):
+
+class SipLogger:
     app = None
     call_id = None
     level = None
@@ -134,7 +141,7 @@ class SipLogger(object):
     itime = None
     offstime = False
 
-    def __init__(self, app, call_id = 'GLOBAL', logfile = '/var/log/sip.log'):
+    def __init__(self, app, call_id='GLOBAL', logfile='/var/log/sip.log'):
         self.itime = time()
         self.app = '/%s' % app
         self.call_id = call_id
@@ -167,9 +174,9 @@ class SipLogger(object):
         msec = (ltime % 1) * 1000
         if not self.offstime:
             return '%s.%.3d' % (strftime('%d %b %H:%M:%S', localtime(ltime)), msec)
-        hrs = int(ltime / (60 * 60))
+        hrs = int(old_div(ltime, (60 * 60)))
         ltime -= (hrs * 60 * 60)
-        mins = int(ltime / 60)
+        mins = int(old_div(ltime, 60))
         ltime -= (mins * 60)
         secs = int(ltime)
         return '%.2d:%.2d:%.2d.%.3d' % (hrs, mins, secs, msec)
@@ -197,22 +204,23 @@ class SipLogger(object):
         self.wi_available.notify()
         self.wi_available.release()
         if discarded and self.discarded % 1000 == 0:
-            print('SipLogger: discarded %d requests, I/O too slow' % self.discarded)
+            print('SipLogger: discarded %d requests, I/O too slow' %
+                  self.discarded)
 
     def format(self, args, kwargs):
         ltime = kwargs.get('ltime', None)
         if ltime == None:
             ltime = time()
         call_id = kwargs.get('call_id', self.call_id)
-        if self.pid != None:
+        if self.pid is not None:
             pid = '[%d]' % self.pid
         else:
             pid = ''
-        return '%s/%s%s%s: %s\n' % (self.ftime(ltime), \
-          call_id, self.app, pid, \
-          reduce(lambda x, y: x + y, [str(x) for x in args]))
+        return '{}/{}{}{}: {}\n'.format(self.ftime(ltime),
+                                        call_id, self.app, pid,
+                                        reduce(lambda x, y: x + y, [str(x) for x in args]))
 
-    def reopen(self, signum = None):
+    def reopen(self, signum=None):
         self.wi_available.acquire()
         self.wi.append(('reopen', None, None))
         self.wi_available.notify()
@@ -221,11 +229,12 @@ class SipLogger(object):
     def shutdown(self):
         if self.logger == None:
             return
-        if self.signal_handler != None:
+        if self.signal_handler is not None:
             self.signal_handler.cancel()
             self.signal_handler = None
         self.logger.shutdown()
         self.logger = None
+
 
 if __name__ == '__main__':
     log = SipLogger(sys.argv[1])

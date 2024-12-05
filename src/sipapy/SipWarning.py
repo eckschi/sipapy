@@ -24,9 +24,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipGenericHF import SipGenericHF
+from sipapy.SipGenericHF import SipGenericHF
 
 import socket
+
 
 class SipWarning(SipGenericHF):
     hf_names = ('warning',)
@@ -34,17 +35,17 @@ class SipWarning(SipGenericHF):
     agent = socket.gethostname()
     text = None
 
-    def __init__(self, body = None, cself = None, code = None, text = None):
+    def __init__(self, body=None, cself=None, code=None, text=None):
         SipGenericHF.__init__(self, body)
-        if body != None:
+        if body is not None:
             return
         self.parsed = True
-        if cself != None:
+        if cself is not None:
             self.code, self.agent, self.text = \
-              cself.code, cself.agent, cself.text
+                cself.code, cself.agent, cself.text
         else:
             self.agent = socket.gethostname()
-            if code != None:
+            if code is not None:
                 self.code = code
             self.text = text.replace('"', "'")
 
@@ -60,4 +61,4 @@ class SipWarning(SipGenericHF):
         return '%d %s "%s"' % (self.code, self.agent, self.text)
 
     def getCopy(self):
-        return self.__class__(cself = self)
+        return self.__class__(cself=self)

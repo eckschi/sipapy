@@ -24,12 +24,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipFrom import SipFrom
+from sipapy.SipFrom import SipFrom
+
 
 class SipPAssertedIdentity(SipFrom):
     hf_names = ('p-asserted-identity',)
 
-    def getCanName(self, name, compact = False):
+    def getCanName(self, name, compact=False):
         return 'P-Asserted-Identity'
 
     def getAddr(self):

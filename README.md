@@ -13,4 +13,4 @@ This software is provided "as-is", without any express or implied warranties. Th
 By using this software, you agree to take full responsibility for any potential risks or issues that may arise from its use.
 
 ## Basis
-This project is based on code from Sippy B2BUA by Maxim Sobolev <sobomax@gmail.com>, which is licensed under the BSD 2-Clause License.
+This project is based on code from sipapy B2BUA by Maxim Sobolev <sobomax@gmail.com>, which is licensed under the BSD 2-Clause License.

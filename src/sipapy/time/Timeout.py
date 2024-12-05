@@ -24,21 +24,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
 
-#import sys
-#sys.path.append('..')
+# import sys
+# sys.path.append('..')
 
-from sippy.Core.EventDispatcher import ED2
-from sippy.Time.MonoTime import MonoTime
+from sipapy.Core.EventDispatcher import ED2
+from sipapy.Time.MonoTime import MonoTime
 
-def Timeout(timeout_cb, ival, nticks = 1, *cb_params):
+
+def Timeout(timeout_cb, ival, nticks=1, *cb_params):
     el = ED2.regTimer(timeout_cb, ival, nticks, False, *cb_params)
     el.go()
     return el
 
-def TimeoutInact(timeout_cb, ival, nticks = 1, *cb_params):
+
+def TimeoutInact(timeout_cb, ival, nticks=1, *cb_params):
     return ED2.regTimer(timeout_cb, ival, nticks, False, *cb_params)
+
 
 def TimeoutAbsMono(timeout_cb, mtime, *cb_params):
     if not isinstance(mtime, MonoTime):
@@ -46,6 +48,7 @@ def TimeoutAbsMono(timeout_cb, mtime, *cb_params):
     el = ED2.regTimer(timeout_cb, mtime, None, True, *cb_params)
     el.go()
     return el
+
 
 def testTimeout():
     def test1(arguments, testnum):
@@ -58,26 +61,29 @@ def testTimeout():
         arguments['test'] = 'bar'
         ED2.breakLoop()
 
-    arguments = {'test':False}
+    arguments = {'test': False}
     timeout_1 = Timeout(test1, 0, 1, arguments, 'test1')
     ED2.loop()
-    assert(arguments['test'])
+    assert (arguments['test'])
     timeout_1 = Timeout(test1, 0.1, 1, arguments, 'test2')
     timeout_2 = Timeout(test2, 0.2, 1, arguments, 'test3')
     timeout_1.cancel()
     ED2.loop()
-    assert(arguments['test'] == 'bar')
+    assert (arguments['test'] == 'bar')
 
-    arguments = {'test':False}
+    arguments = {'test': False}
     timeout_1 = TimeoutAbsMono(test1, MonoTime(), arguments, 'test4')
     ED2.loop()
-    assert(arguments['test'])
+    assert (arguments['test'])
 
-    timeout_1 = TimeoutAbsMono(test1, MonoTime().getOffsetCopy(0.1), arguments, 'test5')
-    timeout_2 = TimeoutAbsMono(test2, MonoTime().getOffsetCopy(0.2), arguments, 'test6')
+    timeout_1 = TimeoutAbsMono(
+        test1, MonoTime().getOffsetCopy(0.1), arguments, 'test5')
+    timeout_2 = TimeoutAbsMono(
+        test2, MonoTime().getOffsetCopy(0.2), arguments, 'test6')
     timeout_1.cancel()
     ED2.loop()
-    assert(arguments['test'] == 'bar')
+    assert (arguments['test'] == 'bar')
+
 
 def testTimeoutAbsMono():
     def test1(arguments, testnum, mtm):
@@ -93,20 +99,21 @@ def testTimeoutAbsMono():
         ED2.breakLoop()
 
     mt = MonoTime()
-    arguments = {'test':False, 'delay':None}
+    arguments = {'test': False, 'delay': None}
     timeout_1 = TimeoutAbsMono(test1, mt, arguments, 'test1', mt)
     ED2.loop()
-    assert(arguments['test'])
-    assert(arguments['delay'] < 0.1)
+    assert (arguments['test'])
+    assert (arguments['delay'] < 0.1)
     mt1 = mt.getOffsetCopy(0.1)
     mt2 = mt.getOffsetCopy(0.2)
-    arguments = {'test':False, 'delay':None}
+    arguments = {'test': False, 'delay': None}
     timeout_1 = TimeoutAbsMono(test1, mt1, arguments, 'test2', mt1)
     timeout_2 = TimeoutAbsMono(test2, mt2, arguments, 'test3', mt2)
     timeout_1.cancel()
     ED2.loop()
-    assert(arguments['test'] == 'bar')
-    assert(arguments['delay'] < 0.1)
+    assert (arguments['test'] == 'bar')
+    assert (arguments['delay'] < 0.1)
+
 
 if __name__ == '__main__':
     testTimeout()

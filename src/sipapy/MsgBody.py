@@ -25,31 +25,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SdpBody import SdpBody
-from sippy.SipContentType import SipContentType
+from sipapy.SdpBody import SdpBody
+from sipapy.SipContentType import SipContentType
 
-try:
-    # Python < 3
-    str_types = (str, unicode)
-except NameError:
-    str_types = (str,)
 
 DEFAULT_CTYPE = SipContentType('application/sdp')
 DEFAULT_CTYPE.parse()
 
-class MsgBody(object):
+
+class MsgBody:
     content = None
     mtype = None
     needs_update = True
     parsed = False
 
-    def __init__(self, content = None, mtype = DEFAULT_CTYPE, cself = None):
-        if content != None:
+    def __init__(self, content=None, mtype=DEFAULT_CTYPE, cself=None):
+        if content is not None:
             self.mtype = mtype
             self.content = content
             return
         if cself is not None:
-            if type(cself.content) in str_types:
+            if type(cself.content) is str:
                 self.content = cself.content
             else:
                 self.content = cself.content.getCopy()
@@ -57,8 +53,8 @@ class MsgBody(object):
             self.parsed = True
 
     def parse(self):
-        b_types = {'application/sdp':SdpBody,
-                   'multipart/mixed':MultipartMixBody}
+        b_types = {'application/sdp': SdpBody,
+                   'multipart/mixed': MultipartMixBody}
         if not self.parsed:
             mtype = self.getType()
             if mtype in b_types:
@@ -68,8 +64,8 @@ class MsgBody(object):
     def __str__(self):
         return str(self.content)
 
-    def localStr(self, local_addr = None, local_port = None):
-        if type(self.content) in str_types:
+    def localStr(self, local_addr=None, local_port=None):
+        if type(self.content) is str:
             return self.content
         return self.content.localStr(local_addr, local_port)
 
@@ -79,7 +75,8 @@ class MsgBody(object):
     def getCopy(self):
         if not self.parsed:
             return MsgBody(self.content)
-        return MsgBody(cself = self)
+        return MsgBody(cself=self)
+
 
 if not 'MultipartMixBody' in globals():
-    from sippy.MultipartMixBody import MultipartMixBody
+    from sipapy.MultipartMixBody import MultipartMixBody

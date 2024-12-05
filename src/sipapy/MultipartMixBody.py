@@ -23,13 +23,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipHeader import SipHeader
+from sipapy.SipHeader import SipHeader
 
-class MultipartMixBody():
+
+class MultipartMixBody:
     parts = None
     boundary = None
 
-    def __init__(self, body = None, ctype = None):
+    def __init__(self, body=None, ctype=None):
         if body == None:
             return
         sep = f'--{ctype.params["boundary"]}'
@@ -53,7 +54,7 @@ class MultipartMixBody():
         s += f'{bnd[:-2]}--\r\n'
         return s
 
-    def localStr(self, local_addr = None, local_port = None):
+    def localStr(self, local_addr=None, local_port=None):
         bnd = f'--{self.boundary}\r\n'
         parts = [f'{bnd}Content-Type: {p.mtype}\r\n{p.localStr(local_addr, local_port)}'
                  for p in self.parts]
@@ -67,5 +68,6 @@ class MultipartMixBody():
         cself.boundary = self.boundary
         return cself
 
+
 if not 'MsgBody' in globals():
-    from sippy.MsgBody import MsgBody
+    from sipapy.MsgBody import MsgBody

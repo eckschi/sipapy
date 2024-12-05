@@ -24,7 +24,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sippy.SipGenericHF import SipGenericHF
+from sipapy.SipGenericHF import SipGenericHF
+
 
 class SipReplaces(SipGenericHF):
     hf_names = ('replaces',)
@@ -34,10 +35,10 @@ class SipReplaces(SipGenericHF):
     early_only = False
     params = None
 
-    def __init__(self, body = None, call_id = None, from_tag = None, to_tag = None, \
-      early_only = False, params = None):
+    def __init__(self, body=None, call_id=None, from_tag=None, to_tag=None,
+                 early_only=False, params=None):
         SipGenericHF.__init__(self, body)
-        if body != None:
+        if body is not None:
             return
         self.parsed = True
         self.params = []
@@ -45,7 +46,7 @@ class SipReplaces(SipGenericHF):
         self.from_tag = from_tag
         self.to_tag = to_tag
         self.early_only = early_only
-        if params != None:
+        if params is not None:
             self.params = params[:]
 
     def parse(self):
@@ -66,7 +67,8 @@ class SipReplaces(SipGenericHF):
     def __str__(self):
         if not self.parsed:
             return self.body
-        res = '%s;from-tag=%s;to-tag=%s' % (self.call_id, self.from_tag, self.to_tag)
+        res = '{};from-tag={};to-tag={}'.format(
+            self.call_id, self.from_tag, self.to_tag)
         if self.early_only:
             res += ';early-only'
         for param in self.params:
@@ -76,5 +78,5 @@ class SipReplaces(SipGenericHF):
     def getCopy(self):
         if not self.parsed:
             return SipReplaces(self.body)
-        return SipReplaces(call_id = self.call_id, from_tag = self.from_tag, to_tag = self.to_tag, \
-          early_only = self.early_only, params = self.params)
+        return SipReplaces(call_id=self.call_id, from_tag=self.from_tag, to_tag=self.to_tag,
+                           early_only=self.early_only, params=self.params)
