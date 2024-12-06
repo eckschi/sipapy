@@ -24,11 +24,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from sipapy.SdpConnecton import SdpConnecton
+from sipapy.SdpConnection import SdpConnection
 from sipapy.SdpMedia import SdpMedia
 from sipapy.SdpGeneric import SdpGeneric
 
-f_types = {'m': SdpMedia, 'i': SdpGeneric, 'c': SdpConnecton, 'b': SdpGeneric,
+f_types = {'m': SdpMedia, 'i': SdpGeneric, 'c': SdpConnection, 'b': SdpGeneric,
            'k': SdpGeneric}
 
 

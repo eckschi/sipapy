@@ -27,10 +27,10 @@
 from sipapy.SdpMediaDescription import SdpMediaDescription, a_header
 from sipapy.SdpGeneric import SdpGeneric
 from sipapy.SdpOrigin import SdpOrigin
-from sipapy.SdpConnecton import SdpConnecton
+from sipapy.SdpConnection import SdpConnection
 
 f_types = {'v': SdpGeneric, 'o': SdpOrigin, 's': SdpGeneric, 'i': SdpGeneric,
-           'u': SdpGeneric, 'e': SdpGeneric, 'p': SdpGeneric, 'c': SdpConnecton,
+           'u': SdpGeneric, 'e': SdpGeneric, 'p': SdpGeneric, 'c': SdpConnection,
            'b': SdpGeneric, 't': SdpGeneric, 'r': SdpGeneric, 'z': SdpGeneric,
            'k': SdpGeneric}
 

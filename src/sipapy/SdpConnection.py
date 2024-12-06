@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-class SdpConnecton:
+class SdpConnection:
     ntype = None
     atype = None
     addr = None
@@ -45,4 +45,4 @@ class SdpConnecton:
         return '{} {} {}'.format(self.ntype, self.atype, self.addr)
 
     def getCopy(self):
-        return SdpConnecton(cself=self)
+        return SdpConnection(cself=self)
