@@ -30,3 +30,11 @@ class TestURL(unittest.TestCase):
             sp = su.getParams()
             print((tuple(sp), mp, su.getHost(), su.getPort()))
             self.assertEqual(str(su), u)
+
+    def test_urn(self):
+        su = SipURL("urn:service:sos.ecall.automatic")
+        self.assertEqual(su.getParams(), [])    
+        self.assertEqual(su.getHost(), None)
+        #self.assertEqual(su.getPort(), None)
+        self.assertEqual(su.scheme, 'urn')
+        self.assertEqual(str(su), "urn:service:sos.ecall.automatic")

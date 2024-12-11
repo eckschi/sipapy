@@ -90,7 +90,7 @@ class SipURL:
             # scheme is missing, assume sip:
             parts.insert(0, 'sip')
         parts[0] = parts[0].lower()
-        if parts[0] not in ('sip', 'sips', 'tel'):
+        if parts[0] not in ('sip', 'sips', 'tel', 'urn'):
             raise ValueError('unsupported scheme: %s:' % parts[0])
         self.scheme, url = parts
         if self.scheme == 'tel':
@@ -98,7 +98,7 @@ class SipURL:
                 self.convertTelURL(url, relaxedparser)
             else:
                 raise ValueError('tel: scheme is not supported')
-        else:
+        elif 'sip' in self.scheme:
             self.parseSipURL(url, relaxedparser)
 
     def convertTelURL(self, url, relaxedparser):
@@ -236,6 +236,8 @@ class SipURL:
         return self.localStr()
 
     def localStr(self, local_addr=None, local_port=None):
+        if self.scheme == 'urn':
+            return self.original_uri
         l = []
         w = l.append
         w(self.scheme + ':')
