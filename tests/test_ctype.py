@@ -3,6 +3,7 @@ import context
 
 from sipapy.SipContentType import SipContentType
 
+
 class TestContentType(unittest.TestCase):
     def test_normal_ctype(self):
         t = 'multipart/mixed;boundary=OSS-unique-boundary-42'
@@ -14,5 +15,5 @@ class TestContentType(unittest.TestCase):
         ct2 = ct1.getCopy()
         self.assertEqual(f'{ct2}', t)
         ct1.params['some'] = 'value'
-        self.assertEqual(f'{ct1}' , t + ';some=value')
-        self.assertEqual(f'{ct2}',  t)
+        self.assertEqual(f'{ct1}', t + ';some=value')
+        self.assertEqual(f'{ct2}', t)

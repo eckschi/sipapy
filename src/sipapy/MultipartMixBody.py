@@ -24,13 +24,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from sipapy.SipHeader import SipHeader
-
+from sipapy.MsgBody import MsgBody
 
 class MultipartMixBody:
     parts = None
     boundary = None
-    
-    def __init__(self, body = None, ctype = None):
+
+    def __init__(self, body=None, ctype=None):
         if body is None:
             return
         sep = f'--{ctype.params["boundary"]}'

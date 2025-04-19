@@ -2,14 +2,18 @@ import asyncio
 import uvloop
 
 from sipapy.network.TcpServer import TcpServer
+from sipapy.SipRequest import SipRequest
+
 
 # Set uvloop as the default event loop policy
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
 class SipCore:
-    def __init__(self):
+    def __init__(self, receivedCallback = None):
         self.server = TcpServer()
+        if receivedCallback is not None:
+            self.recvd = receivedCallback
 
     def start(self):
         # Start the server in the background
@@ -25,5 +29,8 @@ class SipCore:
         """A user-defined callback for handling received data."""
         print(
             f"User callback - Data received from {protocol.peername}: {data}")
+        if self.recvd:
+            req = SipRequest()
+            self.recvd(req, None)
         # For example, you can respond to the client, log data, etc.
         protocol.send_data(f"User processed: {data}")
