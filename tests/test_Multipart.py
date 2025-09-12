@@ -16,8 +16,7 @@ ECALL_BODY1 = (
     '<EmergencyCallData.Control xmlns="urn:ietf:params:xml:ns:EmergencyCallData:control">\r\n'
     '<request action="send-data" datatype="eCall.MSD"/>\r\n'
     "</EmergencyCallData.Control>\r\n"
-    "--boundaryZZZ--\r\n"
-)
+    "--boundaryZZZ--\r\n")
 
 
 class TestMultipart(unittest.TestCase):
@@ -32,7 +31,9 @@ class TestMultipart(unittest.TestCase):
         p0 = mp.parts[0]
         self.assertEqual(MsgBody, type(p0))
         print(p0.mtype)
-        self.assertEqual("application/EmergencyCallData.Control+xml", p0.mtype.localStr())
+        self.assertEqual(
+            "application/EmergencyCallData.Control+xml",
+            p0.mtype.localStr())
         h0 = mp.part_headers[0]
         self.assertEqual("content-disposition", h0[0].name)
         self.assertEqual("content-id", h0[1].name)
