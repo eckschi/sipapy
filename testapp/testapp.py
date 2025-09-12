@@ -4,18 +4,27 @@ import asyncio
 from sipapy.SipCore import SipCore
 
 
-def recvRequest(self, req, sip_t):
+def recvRequest(req, sip_t):
     # search for exisitng call and forward request if found
-    callid = None
-    cidhf = req.getHFBody('call-id')
-    if cidhf is not None:
-        callid = str(cidhf).split("@")[0]
-        call = self.sipCalls.get(callid, None)
-        if call is not None:
-            return call.recvRequest(req, sip_t)
+    # callid = None
+    # cidhf = req.getHFBody('call-id')
+    # if cidhf is not None:
+    #     callid = str(cidhf).split("@")[0]
+    #     call = self.sipCalls.get(callid, None)
+    #     if call is not None:
+    #         return call.recvRequest(req, sip_t)
 
     # incoming call
     if req.getMethod() == 'INVITE':
+        resp = req.genResponse(180, 'Ringing', None)
+        # resp = req.genResponse(200, 'OK', None)
+        return (resp, None, None)
+    elif req.getMethod() == 'REGISTER':
+        print("register")
+        resp = req.genResponse(200, 'OK', None)
+        return (resp, None, None)
+    elif req.getMethod() == 'PUBLISH':
+        print("publish")
         resp = req.genResponse(200, 'OK', None)
         return (resp, None, None)
 

@@ -32,7 +32,7 @@ from sipapy.SipResponse import SipResponse
 from sipapy.SipURL import SipURL
 from sipapy.SipAddress import SipAddress
 from sipapy.SipExpires import SipExpires
-from sipapy.Exceptions.SipParseError import SipParseError
+from sipapy.exceptions.SipParseError import SipParseError
 
 
 class SipRequest(SipMsg):

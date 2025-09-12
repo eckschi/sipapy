@@ -33,8 +33,8 @@ from sipapy.SipRequest import SipRequest
 from sipapy.SipAddress import SipAddress
 from sipapy.SipRoute import SipRoute
 from sipapy.SipHeader import SipHeader
-from sipapy.Exceptions.SipParseError import SipParseError, SdpParseError
-from sipapy.Exceptions.RtpProxyError import RtpProxyError
+from sipapy.exceptions.SipParseError import SipParseError, SdpParseError
+from sipapy.exceptions.RtpProxyError import RtpProxyError
 from sipapy.Udp_server import Udp_server, Udp_server_opts
 from sipapy.TcpServer import TcpServer
 from datetime import datetime

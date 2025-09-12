@@ -24,9 +24,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from threading import local
-from sipapy.Time.clock_dtime import clock_getdtime, CLOCK_REALTIME, CLOCK_MONOTONIC
-from sipapy.Math.recfilter import recfilter
-from past.builtins import cmp
+from sipapy.time.clock_dtime import clock_getdtime, CLOCK_REALTIME, CLOCK_MONOTONIC
+#from sipapy.math.recfilter import recfilter
+#from past.builtins import cmp
 from time import strftime, gmtime, localtime
 
 import sys

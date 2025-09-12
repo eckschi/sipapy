@@ -30,7 +30,7 @@ from sipapy.SipContentType import SipContentType
 from sipapy.MsgBody import MsgBody
 from sipapy.ESipHeaderCSV import ESipHeaderCSV
 from sipapy.ESipHeaderIgnore import ESipHeaderIgnore
-from sipapy.Exceptions.SipParseError import SipParseError
+from sipapy.exceptions.SipParseError import SipParseError
 
 
 class SipMsg:

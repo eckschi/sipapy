@@ -4,8 +4,9 @@ import uvloop
 # Set uvloop as the default event loop policy
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
-class TcpServerProtocol(asyncio.Protocol):
+class TcpServerconnection(asyncio.Protocol):
     def __init__(self, server, data_received_callback=None):
+        self.id = None
         self.server = server
         self.transport = None
         self.peername = None
@@ -18,20 +19,13 @@ class TcpServerProtocol(asyncio.Protocol):
         self.server.add_connection(self)  # Register this connection
 
     def data_received(self, data):
-        message = data.decode()
-        print(f"Received data: {message}")
-        
         # Trigger the external callback if it's provided
         if self.data_received_callback:
-            self.data_received_callback(self, message)  # Call the user's callback
+            self.data_received_callback(self, data)  
             
-        # Echo back the received data
-        self.transport.write(data)
-        print(f"Sent data: {message}")
-
     def connection_lost(self, exc):
         print(f"Closing connection from {self.peername}")
-        self.server.remove_connection(self)  # Remove the connection from the server
+        self.server.remove_connection(self.id)  # Remove the connection from the server
 
     def send_data(self, data):
         """Send data from the outside."""
@@ -40,25 +34,36 @@ class TcpServerProtocol(asyncio.Protocol):
 
 class TcpServer:
     def __init__(self):
-        self.connections = []
+        self.connections: dict[int, TcpServerconnection] = {}
+        self.next_conn_id = 0
 
-    def add_connection(self, protocol):
-        """Add a protocol instance to the connections list."""
-        self.connections.append(protocol)
+    def add_connection(self, connection):
+        """Add a connection instance to the connections list."""
+        cid = self.next_conn_id
+        self.next_conn_id = self.next_conn_id + 1
+        self.connections[cid] = connection
+        connection.id = cid
 
-    def remove_connection(self, protocol):
-        """Remove a protocol instance from the connections list."""
-        self.connections.remove(protocol)
+    def remove_connection(self, conn_id):
+        """Remove a connection instance from the connections list."""
+        self.connections.pop(conn_id, None)
 
     def broadcast(self, message):
         """Send the message to all connected clients."""
-        for protocol in self.connections:
-            protocol.send_data(message)
+        for connection in self.connections:
+            connection.send_data(message)
+        
+    def send_to(self, conn_id, message):
+        connection = self.connections.get(conn_id)
+        if connection:
+            connection.send_data(message)
+        else:
+            print('do hots wos')
 
-    async def start_server(self, host='127.0.0.1', port=8888, data_received_callback=None):
+    async def start_server(self, host, port, data_received_callback=None):
         loop = asyncio.get_event_loop()
         server = await loop.create_server(
-            lambda: TcpServerProtocol(self, data_received_callback),
+            lambda: TcpServerconnection(self, data_received_callback),
             host, port
         )
         addr = server.sockets[0].getsockname()
@@ -71,6 +76,6 @@ class TcpServer:
     def stop_server(self):
         """Gracefully stop the server."""
         print("Stopping the server...")
-        for protocol in self.connections:
-            protocol.transport.close()            
+        for connection in self.connections:
+            connection.transport.close()            
 
