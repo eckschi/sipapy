@@ -36,27 +36,12 @@ f_types = {'v': SdpGeneric, 'o': SdpOrigin, 's': SdpGeneric, 'i': SdpGeneric,
 
 
 class SdpBody:
-    v_header = None
-    o_header = None
-    s_header = None
-    i_header = None
-    u_header = None
-    e_header = None
-    p_header = None
-    c_header = None
-    b_header = None
-    t_header = None
-    r_header = None
-    z_header = None
-    k_header = None
-    a_headers = None
     first_half = ('v', 'o', 's', 'i', 'u', 'e', 'p')
     second_half = ('b', 't', 'r', 'z', 'k')
     all_headers = ('v', 'o', 's', 'i', 'u', 'e',
                    'p', 'c', 'b', 't', 'r', 'z', 'k')
     top_hdrs_req = ('v', 'o', 's', 't')
-    sect_hdrs_req = ('c', 'm')
-    sections = None
+    sect_hdrs_req = ('c')
 
     def __init__(self, body=None, cself=None, ctype=None):
         if cself is not None:
@@ -67,80 +52,98 @@ class SdpBody:
                 except AttributeError:
                     pass
             self.a_headers = [x.getCopy() for x in cself.a_headers]
-            self.sections = [x.getCopy() for x in cself.sections]
+            self.media_lines_lines = [x.getCopy() for x in cself.media_lines_lines]
             return
         self.a_headers = []
-        self.sections = []
+        self.media_lines = []
         if body == None:
             return
         avpairs = [x.split('=', 1)
                    for x in body.strip().splitlines() if len(x.strip()) > 0]
-        current_snum = 0
+        
+        current_media = None
         c_header = None
+
+        media_level = False
         for name, v in avpairs:
             name = name.lower()
+            # decide if we are in session or media section
             if name == 'm':
-                current_snum += 1
-                self.sections.append(SdpMediaDescription())
-            if current_snum == 0:
+                media_level = True
+
+            # parse the session level
+            if not media_level:
                 if name == 'c':
                     c_header = v
                 elif name == 'a':
                     self.a_headers.append(a_header(v))
                 else:
                     setattr(self, name + '_header', f_types[name](v))
+            # parse the media level
             else:
-                self.sections[-1].addHeader(name, v)
+                if name == 'm':
+                    if current_media is not None:
+                        self.media_lines.append(current_media)
+                    current_media = SdpMediaDescription(v)
+                else:
+                    current_media.addHeader(name, v)
+
+        # add the last media section if any
+        if current_media is not None:
+            self.media_lines.append(current_media)
+
+
+        # post processing
+        # add the connection to all media media_lines that do not have it
         if c_header is not None:
-            for section in self.sections:
+            for section in self.media_lines:
                 if section.c_header == None:
                     section.addHeader('c', c_header)
-            if len(self.sections) == 0:
+            if len(self.media_lines) == 0:
                 self.addHeader('c', c_header)
         # Do some sanity checking, RFC4566
         for header_name in [x + '_header' for x in self.top_hdrs_req]:
             if getattr(self, header_name) == None:
-                raise Exception(
-                    'Mandatory "%s=" session header is missing' % header_name[0])
-        for section in self.sections:
+                raise Exception(f'Mandatory "{header_name[0]}=" session header is missing')
+        for section in self.media_lines:
             for header_name in [x + '_header' for x in self.sect_hdrs_req]:
                 if getattr(section, header_name) == None:
-                    raise Exception(
-                        'Mandatory "%s=" media header is missing' % header_name[0])
+                    raise Exception(f'Mandatory "{header_name[0]}=" media header is missing')
 
+            
     def __str__(self):
         s = ''
-        if len(self.sections) == 1 and self.sections[0].c_header is not None:
+        if len(self.media_lines_lines) == 1 and self.media_lines_lines[0].c_header is not None:
             for name in self.first_half:
                 header = getattr(self, name + '_header')
                 if header is not None:
                     s += '{}={}\r\n'.format(name, str(header))
-            s += 'c=%s\r\n' % str(self.sections[0].c_header)
+            s += 'c=%s\r\n' % str(self.media_lines_lines[0].c_header)
             for name in self.second_half:
                 header = getattr(self, name + '_header')
                 if header is not None:
                     s += '{}={}\r\n'.format(name, str(header))
             for header in self.a_headers:
                 s += 'a=%s\r\n' % str(header)
-            s += self.sections[0].localStr(noC=True)
+            s += self.media_lines_lines[0].localStr(noC=True)
             return s
         # Special code to optimize for the cases when there are many media streams pointing to
         # the same IP. Only include c= header into the top section of the SDP and remove it from
         # the streams that match.
         optimize_c_headers = False
-        if len(self.sections) > 1 and self.c_header == None and self.sections[0].c_header != None and \
-                str(self.sections[0].c_header) == str(self.sections[1].c_header):
+        if len(self.media_lines_lines) > 1 and self.c_header == None and self.media_lines_lines[0].c_header != None and \
+                str(self.media_lines_lines[0].c_header) == str(self.media_lines_lines[1].c_header):
             # Special code to optimize for the cases when there are many media streams pointing to
             # the same IP. Only include c= header into the top section of the SDP and remove it from
             # the streams that match.
             optimize_c_headers = True
-            sections_0_str = str(self.sections[0].c_header)
+            media_lines_0_str = str(self.media_lines_lines[0].c_header)
         if optimize_c_headers:
             for name in self.first_half:
                 header = getattr(self, name + '_header')
                 if header is not None:
                     s += '{}={}\r\n'.format(name, str(header))
-            s += 'c=%s\r\n' % sections_0_str
+            s += 'c=%s\r\n' % media_lines_0_str
             for name in self.second_half:
                 header = getattr(self, name + '_header')
                 if header is not None:
@@ -152,9 +155,9 @@ class SdpBody:
                     s += '{}={}\r\n'.format(name, str(header))
         for header in self.a_headers:
             s += 'a=%s\r\n' % str(header)
-        for section in self.sections:
+        for section in self.media_lines_lines:
             if optimize_c_headers and section.c_header != None and \
-                    str(section.c_header) == sections_0_str:
+                    str(section.c_header) == media_lines_0_str:
                 s += section.localStr(noC=True)
             else:
                 s += str(section)
@@ -162,13 +165,13 @@ class SdpBody:
 
     def localStr(self, local_addr=None, local_port=None):
         s = ''
-        if len(self.sections) == 1 and self.sections[0].c_header is not None:
+        if len(self.media_lines_lines) == 1 and self.media_lines_lines[0].c_header is not None:
             for name in self.first_half:
                 header = getattr(self, name + '_header')
                 if header is not None:
                     s += '{}={}\r\n'.format(name,
                                             header.localStr(local_addr, local_port))
-            s += 'c=%s\r\n' % self.sections[0].c_header.localStr(
+            s += 'c=%s\r\n' % self.media_lines_lines[0].c_header.localStr(
                 local_addr, local_port)
             for name in self.second_half:
                 header = getattr(self, name + '_header')
@@ -177,19 +180,19 @@ class SdpBody:
                                             header.localStr(local_addr, local_port))
             for header in self.a_headers:
                 s += 'a=%s\r\n' % str(header)
-            s += self.sections[0].localStr(local_addr, local_port, noC=True)
+            s += self.media_lines_lines[0].localStr(local_addr, local_port, noC=True)
             return s
         # Special code to optimize for the cases when there are many media streams pointing to
         # the same IP. Only include c= header into the top section of the SDP and remove it from
         # the streams that match.
         optimize_c_headers = False
-        if len(self.sections) > 1 and self.c_header == None and self.sections[0].c_header != None and \
-                self.sections[0].c_header.localStr(local_addr, local_port) == self.sections[1].c_header.localStr(local_addr, local_port):
+        if len(self.media_lines_lines) > 1 and self.c_header == None and self.media_lines_lines[0].c_header != None and \
+                self.media_lines_lines[0].c_header.localStr(local_addr, local_port) == self.media_lines_lines[1].c_header.localStr(local_addr, local_port):
             # Special code to optimize for the cases when there are many media streams pointing to
             # the same IP. Only include c= header into the top section of the SDP and remove it from
             # the streams that match.
             optimize_c_headers = True
-            sections_0_str = self.sections[0].c_header.localStr(
+            media_lines_0_str = self.media_lines_lines[0].c_header.localStr(
                 local_addr, local_port)
         if optimize_c_headers:
             for name in self.first_half:
@@ -197,7 +200,7 @@ class SdpBody:
                 if header is not None:
                     s += '{}={}\r\n'.format(name,
                                             header.localStr(local_addr, local_port))
-            s += 'c=%s\r\n' % sections_0_str
+            s += 'c=%s\r\n' % media_lines_0_str
             for name in self.second_half:
                 header = getattr(self, name + '_header')
                 if header is not None:
@@ -211,17 +214,17 @@ class SdpBody:
                                             header.localStr(local_addr, local_port))
         for header in self.a_headers:
             s += 'a=%s\r\n' % str(header)
-        for section in self.sections:
+        for section in self.media_lines_lines:
             if optimize_c_headers and section.c_header != None and \
-                    section.c_header.localStr(local_addr, local_port) == sections_0_str:
+                    section.c_header.localStr(local_addr, local_port) == media_lines_0_str:
                 s += section.localStr(local_addr, local_port, noC=True)
             else:
                 s += section.localStr(local_addr, local_port)
         return s
 
     def __iadd__(self, other):
-        if len(self.sections) > 0:
-            self.sections[-1].addHeader(*other.strip().split('=', 1))
+        if len(self.media_lines_lines) > 0:
+            self.media_lines_lines[-1].addHeader(*other.strip().split('=', 1))
         else:
             self.addHeader(*other.strip().split('=', 1))
         return self

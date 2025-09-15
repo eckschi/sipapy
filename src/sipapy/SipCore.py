@@ -60,7 +60,7 @@ class SipCore:
         else:
             message = data
 
-        logger.info(
+        logger.debug(
             f'RECEIVED message from {address[0]}:{address[1]}:\n{message}')
         checksum = md5(data).digest()
         # retrans = self.l1rcache.get(checksum, None)
@@ -161,8 +161,7 @@ class SipCore:
                 logger.info('Loop Detected')
                 t = self.client_transactions[tid]
                 resp = msg.genResponse(482, 'Loop Detected')
-                self.transmitMsg(connection, resp, resp.getHFBody(
-                    'via').getTAddr(), checksum, t.compact)
+                self.transmitMsg(connection, resp, resp.getHFBody('via').getTAddr())
                 return
         if msg.getMethod() != 'ACK':
             tid = msg.getTId(wBRN=True)
@@ -181,10 +180,10 @@ class SipCore:
             elif msg.getMethod() == 'CANCEL':
                 # RFC3261 says that we have to reply 200 OK in all cases if there is such transaction
                 resp = msg.genResponse(200, 'OK')
-                self.transmitMsg(t.userv, resp, resp.getHFBody('via').getTAddr(), checksum,
-                                 t.compact)
-                if t.state in (TRYING, RINGING):
-                    self.doCancel(t, msg.rtime, msg)
+                self.transmitMsg(t.connection, resp, resp.getHFBody('via').getTAddr())
+                if t.state in (SipTransactionStates.TRYING, SipTransactionStates.PROCEEDING):
+                    #self.doCancel(t, msg.rtime, msg)
+                    pass # TODO implement doCancel
             elif msg.getMethod() == 'ACK' and t.state == COMPLETED:
                 t.state = CONFIRMED
                 if t.teA != None:
@@ -251,7 +250,6 @@ class SipCore:
             # for consumer in self.req_consumers.get(t.tid[0], ()):
             #     cobj = consumer.cobj.isYours(msg)
             #     if cobj != None:
-            #         t.compact = consumer.compact
             #         rval = cobj.recvRequest(msg, t)
             rval = self.recvRequest(msg, t)
 
@@ -345,8 +343,7 @@ class SipCore:
         if t.teG is not None:
             t.teG.cancel()
             t.teG = None
-        self.transmitMsg(t.userv, t.ack, t.ack_rAddr,
-                         t.ack_checksum, t.compact)
+        self.transmitMsg(t.userv, t.ack, t.ack_rAddr)
         if t.req_out_cb is not None:
             t.req_out_cb(t.ack)
         del self.tclient[t.tid]

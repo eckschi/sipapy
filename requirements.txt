@@ -2,3 +2,4 @@ asyncio >= 3.4.3
 pycryptodome >= 3.20.0
 uvloop >= 0.21.0
 # websockets   14.1
+loguru >= 0.7.0

@@ -1,6 +1,7 @@
 # Copyright (c) 2003-2005 Maxim Sobolev. All rights reserved.
 # Copyright (c) 2006-2022 Sippy Software, Inc. All rights reserved.
-#
+# 2025 cleaned up by eckschi
+
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
@@ -25,11 +26,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from sipapy.SdpConnection import SdpConnection
-from sipapy.SdpMedia import SdpMedia
 from sipapy.SdpGeneric import SdpGeneric
+from enum import Enum
 
-f_types = {'m': SdpMedia, 'i': SdpGeneric, 'c': SdpConnection, 'b': SdpGeneric,
+f_types = {'i': SdpGeneric, 'c': SdpConnection, 'b': SdpGeneric,
            'k': SdpGeneric}
+
+# Using an Enum is the best way to define a fixed set of types
+class MediaType(Enum):
+    AUDIO = "audio"
+    VIDEO = "video"
+    OTHER = "other"
 
 
 class a_header:
@@ -37,10 +44,6 @@ class a_header:
     value = None
 
     def __init__(self, s):
-        if isinstance(s, a_header):
-            self.name = s.name
-            self.value = s.value
-            return
         parts = s.split(':', 1)
         self.name = parts[0]
         if len(parts) > 1:
@@ -51,39 +54,47 @@ class a_header:
             return self.name
         return '{}:{}'.format(self.name, self.value)
 
-    def getCopy(self):
-        return a_header(self)
-
 
 class SdpMediaDescription:
-    m_header = None
-    i_header = None
-    c_header = None
-    b_header = None
-    k_header = None
-    a_headers = None
     all_headers = ('m', 'i', 'c', 'b', 'k')
-    needs_update = True
 
-    def __init__(self, cself=None):
-        if cself is not None:
-            for header_name in [x + '_header' for x in self.all_headers]:
-                try:
-                    setattr(self, header_name, getattr(
-                        cself, header_name).getCopy())
-                except AttributeError:
-                    pass
-            self.a_headers = [x.getCopy() for x in cself.a_headers]
-            return
-        self.a_headers = []
+    def __init__(self, body=None):
+        self.other_attributes = []
+        self.c_header = None
+        self.rtpmap = {}
+        self.fmtp = {}
+        if body is not None:
+            params = body.split()
+            self.stype = params[0]
+            lstype = self.stype.lower()
+            if lstype == 'audio':
+                self.type = MediaType.AUDIO
+            elif lstype == 'video':
+                self.type = MediaType.VIDEO
+            else:
+                self.type = MediaType.OTHER
+            self.port = int(params[1])
+            self.transport = params[2]
+            if self.type in (MediaType.AUDIO, MediaType.VIDEO):
+                self.formats = [int(x) for x in params[3:]]
+            else:
+                self.formats = params[3:]
 
     def __str__(self):
-        s = ''
+        # media line
+        s = '%s %d %s' % (self.stype, self.port, self.transport)
+        if self.type in (MediaType.AUDIO, MediaType.VIDEO):
+            for format in self.formats:
+                s += ' %d' % format
+        else:
+            for format in self.formats:
+                s += ' %s' % format
+        # other headers
         for name in self.all_headers:
             header = getattr(self, name + '_header')
             if header is not None:
                 s += '{}={}\r\n'.format(name, str(header))
-        for header in self.a_headers:
+        for header in self.other_attributes:
             s += 'a=%s\r\n' % str(header)
         return s
 
@@ -96,7 +107,7 @@ class SdpMediaDescription:
             if header is not None:
                 s += '{}={}\r\n'.format(name,
                                         header.localStr(local_addr, local_port))
-        for header in self.a_headers:
+        for header in self.other_attributes:
             s += 'a=%s\r\n' % str(header)
         return s
 
@@ -109,31 +120,14 @@ class SdpMediaDescription:
 
     def addHeader(self, name, header):
         if name == 'a':
-            self.a_headers.append(a_header(header))
+            self.other_attributes.append(a_header(header))
+            rtpmap = header.startswith('rtpmap')
+            fmtp = header.startswith('fmtp')
+            if rtpmap or fmtp:
+                num = int(header.split(' ', 1)[0].split(':', 1)[1])
+                if rtpmap:
+                    self.rtpmap[num] = header.split(' ', 1)[1]
+                elif fmtp:
+                    self.fmtp[num] = header.split(' ', 1)[1]
         else:
             setattr(self, name + '_header', f_types[name](header))
-
-    def insertHeader(self, indx, name, header):
-        assert (name == 'a')
-        self.a_headers.insert(indx, a_header(header))
-
-    def optimize_a(self):
-        for ah in [x for x in self.a_headers if x.name in ('rtpmap', 'fmtp') and
-                   x.value is not None]:
-            try:
-                pt = int(ah.value.split(' ', 1)[0])
-            except ValueError:
-                continue
-            if pt in self.m_header.formats:
-                continue
-            self.a_headers.remove(ah)
-
-    def isOnHold(self):
-        if self.c_header.atype == 'IP4' and self.c_header.addr == '0.0.0.0':
-            return True
-        if self.c_header.atype == 'IP6' and self.c_header.addr == '::':
-            return True
-        if len([1 for x in self.a_headers if x.value is None and
-                x.name in ('sendonly', 'inactive')]) > 0:
-            return True
-        return False
