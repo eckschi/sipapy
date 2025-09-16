@@ -26,23 +26,29 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class SdpConnection:
-    ntype = None
-    atype = None
-    addr = None
-
-    def __init__(self, body=None, cself=None):
+    def __init__(self, body=None):
+        self.ntype = None
+        self.atype = None
+        self.addr = None
         if body is not None:
             self.ntype, self.atype, self.addr = body.split()[:3]
-        else:
-            self.ntype = cself.ntype
-            self.atype = cself.atype
-            self.addr = cself.addr
+
+    @classmethod
+    def from_string(cls, body):
+        inst = cls()
+        inst.ntype, inst.atype, inst.addr = body.split()[:3]
+        return inst
+    
+    @classmethod
+    def from_values(cls, ntype, atype, addr):
+        inst = cls()
+        inst.ntype = ntype
+        inst.atype = atype
+        inst.addr = addr
+        return inst
 
     def __str__(self):
         return '{} {} {}'.format(self.ntype, self.atype, self.addr)
 
     def localStr(self, local_addr=None, local_port=None):
         return '{} {} {}'.format(self.ntype, self.atype, self.addr)
-
-    def getCopy(self):
-        return SdpConnection(cself=self)

@@ -27,7 +27,10 @@
 
 from sipapy.SdpConnection import SdpConnection
 from sipapy.SdpGeneric import SdpGeneric
+from sipapy.SdpCodecInfo import SdpCodecInfo, Codec
+
 from enum import Enum
+import re
 
 f_types = {'i': SdpGeneric, 'c': SdpConnection, 'b': SdpGeneric,
            'k': SdpGeneric}
@@ -58,11 +61,12 @@ class a_header:
 class SdpMediaDescription:
     all_headers = ('m', 'i', 'c', 'b', 'k')
 
-    def __init__(self):
+    def __init__(self, body=None):
         self.other_attributes = []
         self.c_header = None
-        self.rtpmap = {}
-        self.fmtp = {}
+        self.codecs = {}
+        if body is not None:
+            self.from_string(body)
 
     @classmethod
     def fromString(cls, s):
@@ -118,19 +122,30 @@ class SdpMediaDescription:
         self.addHeader(*other.strip().split('=', 1))
         return self
 
-    def getCopy(self):
-        return SdpMediaDescription(cself=self)
-
     def addHeader(self, name, header):
+        rtpmap_regex = re.compile(r'rtpmap:(\d+)\s+([a-zA-Z0-9\-]+)/(\d+)(?:/(\d+))?')
+        fmtp_regex = re.compile(r'fmtp:(\d+)\s+(.+)')
+
         if name == 'a':
             self.other_attributes.append(a_header(header))
-            rtpmap = header.startswith('rtpmap')
-            fmtp = header.startswith('fmtp')
-            if rtpmap or fmtp:
-                num = int(header.split(' ', 1)[0].split(':', 1)[1])
-                if rtpmap:
-                    self.rtpmap[num] = header.split(' ', 1)[1]
-                elif fmtp:
-                    self.fmtp[num] = header.split(' ', 1)[1]
+
+            rtpmap_match = rtpmap_regex.search(header)
+            if rtpmap_match:
+                payload_type = int(rtpmap_match.group(1))
+                codec_name = rtpmap_match.group(2)
+                clock_rate = int(rtpmap_match.group(3))
+                channels = int(rtpmap_match.group(4)) if rtpmap_match.group(4) else 1
+                print(f"Parsed rtpmap - Payload Type: {payload_type}, Codec: {codec_name}, Clock Rate: {clock_rate}, Channels: {channels}")
+                self.codecs[payload_type] = SdpCodecInfo(codec_name, clock_rate, channels)
+                print(f"Created SdpCodecInfo: {self.codecs[payload_type]}")
+
+            fmtp_match = fmtp_regex.search(header)
+            if fmtp_match:
+                payload_type = int(fmtp_match.group(1))
+                params = fmtp_match.group(2)
+                print(f"Parsed fmtp - Payload Type: {payload_type}, Params: {params}")
+                if payload_type in self.codecs:
+                    self.codecs[payload_type].fmtp = params
+
         else:
             setattr(self, name + '_header', f_types[name](header))

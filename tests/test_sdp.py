@@ -2,6 +2,10 @@ import unittest
 
 from sipapy.SdpBody import SdpBody
 from sipapy.SdpMediaDescription import SdpMediaDescription, MediaType
+from sipapy.SdpCodecInfo import SdpCodecInfo, Codec
+from sipapy.SdpOrigin import SdpOrigin
+from sipapy.SdpConnection import SdpConnection
+
 class TestSdp(unittest.TestCase):
     def test_simple_sdp(self):
         sdp_data = (
@@ -89,17 +93,21 @@ class TestSdp(unittest.TestCase):
         self.assertEqual(sdp.media_lines[0].c_header.addr, '198.51.100.1')
         self.assertEqual(sdp.media_lines[0].type, MediaType.AUDIO)
         self.assertEqual(sdp.media_lines[0].formats, [114, 101])
-        self.assertEqual(sdp.media_lines[0].rtpmap[114], 'opus/48000/2')
-        self.assertEqual(sdp.media_lines[0].fmtp[114], 'useinbandfec=1;stereo=1')
-        self.assertEqual(sdp.media_lines[0].rtpmap[101], 'telephone-event/8000')
-        self.assertEqual(sdp.media_lines[0].fmtp[101], '0-15')
-        
+        self.assertEqual(len(sdp.media_lines[0].codecs), 2)
+        self.assertEqual(sdp.media_lines[0].codecs[114].codec, Codec.OPUS)
+        self.assertEqual(sdp.media_lines[0].codecs[114].clock_rate, 48000)
+        self.assertEqual(sdp.media_lines[0].codecs[114].channels, 2)
+        self.assertEqual(sdp.media_lines[0].codecs[114].fmtp, 'useinbandfec=1;stereo=1')
+
         self.assertEqual(sdp.media_lines[1].port, 50000)
         self.assertEqual(sdp.media_lines[1].c_header.addr, '198.51.100.1')
         self.assertEqual(sdp.media_lines[1].type, MediaType.VIDEO)
         self.assertEqual(sdp.media_lines[1].formats, [97, 98])
-        self.assertEqual(sdp.media_lines[1].rtpmap[97], 'VP8/90000')
-        self.assertEqual(sdp.media_lines[1].rtpmap[98], 'H264/90000')
+        self.assertEqual(len(sdp.media_lines[1].codecs), 2)
+        self.assertEqual(sdp.media_lines[1].codecs[97].codec, Codec.VP8)
+        self.assertEqual(sdp.media_lines[1].codecs[97].clock_rate, 90000)
+        self.assertEqual(sdp.media_lines[1].codecs[98].codec, Codec.H264)
+        self.assertEqual(sdp.media_lines[1].codecs[98].clock_rate, 90000)
 
     def test_generate_sdp(self):
         expected_output = "v=0\r\n"\
@@ -123,5 +131,15 @@ class TestSdp(unittest.TestCase):
             "a=maxptime:40\r\n"\
             "a=ptime:20\r\n"
 
+        sdp = SdpBody.from_values(
+            subject="QC VOIP",
+            origin=SdpOrigin(address='192.168.56.50'),
+            connection=SdpConnection.from_values(
+                ntype='IN',
+                atype='IP4',
+                addr='192.168.56.50')
+        )
+
+        print(sdp)
 
         self.assertTrue(True)

@@ -104,15 +104,26 @@ class SdpBody:
                         f'Mandatory "{header_name[0]}=" media header is missing')
 
         return inst
+    
+    @classmethod
+    def from_values(cls, subject: str, origin: SdpOrigin, connection: SdpConnection = None):
+        inst = cls()
+        inst.v_header = SdpGeneric('0')
+        inst.s_header = SdpGeneric(subject)
+        inst.o_header = origin
+        inst.c_header = connection
+        inst.t_header = SdpGeneric('0 0')
+        
+        return inst
 
     def __str__(self):
         s = ''
-        if len(self.media_lines_lines) == 1 and self.media_lines_lines[0].c_header is not None:
+        if len(self.media_lines) == 1 and self.media_lines[0].c_header is not None:
             for name in self.first_half:
                 header = getattr(self, name + '_header')
                 if header is not None:
                     s += '{}={}\r\n'.format(name, str(header))
-            s += 'c=%s\r\n' % str(self.media_lines_lines[0].c_header)
+            s += 'c=%s\r\n' % str(self.media_lines[0].c_header)
             for name in self.second_half:
                 header = getattr(self, name + '_header')
                 if header is not None:
@@ -125,8 +136,8 @@ class SdpBody:
         # the same IP. Only include c= header into the top section of the SDP and remove it from
         # the streams that match.
         optimize_c_headers = False
-        if len(self.media_lines_lines) > 1 and self.c_header == None and self.media_lines_lines[0].c_header != None and \
-                str(self.media_lines_lines[0].c_header) == str(self.media_lines_lines[1].c_header):
+        if len(self.media_lines) > 1 and self.c_header == None and self.media_lines[0].c_header != None and \
+                str(self.media_lines[0].c_header) == str(self.media_lines[1].c_header):
             # Special code to optimize for the cases when there are many media streams pointing to
             # the same IP. Only include c= header into the top section of the SDP and remove it from
             # the streams that match.
@@ -143,13 +154,13 @@ class SdpBody:
                 if header is not None:
                     s += '{}={}\r\n'.format(name, str(header))
         else:
-            for name in self.all_headers:
+            for name in self.top_hdrs_req:#all_headers:
                 header = getattr(self, name + '_header')
                 if header is not None:
                     s += '{}={}\r\n'.format(name, str(header))
         for header in self.a_headers:
             s += 'a=%s\r\n' % str(header)
-        for section in self.media_lines_lines:
+        for section in self.media_lines:
             if optimize_c_headers and section.c_header != None and \
                     str(section.c_header) == media_lines_0_str:
                 s += section.localStr(noC=True)
@@ -159,13 +170,13 @@ class SdpBody:
 
     def localStr(self, local_addr=None, local_port=None):
         s = ''
-        if len(self.media_lines_lines) == 1 and self.media_lines_lines[0].c_header is not None:
+        if len(self.media_lines) == 1 and self.media_lines[0].c_header is not None:
             for name in self.first_half:
                 header = getattr(self, name + '_header')
                 if header is not None:
                     s += '{}={}\r\n'.format(name,
                                             header.localStr(local_addr, local_port))
-            s += 'c=%s\r\n' % self.media_lines_lines[0].c_header.localStr(
+            s += 'c=%s\r\n' % self.media_lines[0].c_header.localStr(
                 local_addr, local_port)
             for name in self.second_half:
                 header = getattr(self, name + '_header')
@@ -174,20 +185,20 @@ class SdpBody:
                                             header.localStr(local_addr, local_port))
             for header in self.a_headers:
                 s += 'a=%s\r\n' % str(header)
-            s += self.media_lines_lines[0].localStr(
+            s += self.media_lines[0].localStr(
                 local_addr, local_port, noC=True)
             return s
         # Special code to optimize for the cases when there are many media streams pointing to
         # the same IP. Only include c= header into the top section of the SDP and remove it from
         # the streams that match.
         optimize_c_headers = False
-        if len(self.media_lines_lines) > 1 and self.c_header == None and self.media_lines_lines[0].c_header != None and \
-                self.media_lines_lines[0].c_header.localStr(local_addr, local_port) == self.media_lines_lines[1].c_header.localStr(local_addr, local_port):
+        if len(self.media_lines) > 1 and self.c_header == None and self.media_lines[0].c_header != None and \
+                self.media_lines[0].c_header.localStr(local_addr, local_port) == self.media_lines[1].c_header.localStr(local_addr, local_port):
             # Special code to optimize for the cases when there are many media streams pointing to
             # the same IP. Only include c= header into the top section of the SDP and remove it from
             # the streams that match.
             optimize_c_headers = True
-            media_lines_0_str = self.media_lines_lines[0].c_header.localStr(
+            media_lines_0_str = self.media_lines[0].c_header.localStr(
                 local_addr, local_port)
         if optimize_c_headers:
             for name in self.first_half:
