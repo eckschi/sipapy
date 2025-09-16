@@ -58,27 +58,30 @@ class a_header:
 class SdpMediaDescription:
     all_headers = ('m', 'i', 'c', 'b', 'k')
 
-    def __init__(self, body=None):
+    def __init__(self):
         self.other_attributes = []
         self.c_header = None
         self.rtpmap = {}
         self.fmtp = {}
-        if body is not None:
-            params = body.split()
-            self.stype = params[0]
-            lstype = self.stype.lower()
-            if lstype == 'audio':
-                self.type = MediaType.AUDIO
-            elif lstype == 'video':
-                self.type = MediaType.VIDEO
-            else:
-                self.type = MediaType.OTHER
-            self.port = int(params[1])
-            self.transport = params[2]
-            if self.type in (MediaType.AUDIO, MediaType.VIDEO):
-                self.formats = [int(x) for x in params[3:]]
-            else:
-                self.formats = params[3:]
+
+    @classmethod
+    def fromString(cls, s):
+        parts = s.split()
+        media_desc = cls()
+        media_desc.stype = parts[0]
+        media_desc.port = int(parts[1])
+        media_desc.transport = parts[2]
+        if media_desc.stype.lower() == 'audio':
+            media_desc.type = MediaType.AUDIO
+        elif media_desc.stype.lower() == 'video':
+            media_desc.type = MediaType.VIDEO
+        else:
+            media_desc.type = MediaType.OTHER
+        if media_desc.type in (MediaType.AUDIO, MediaType.VIDEO):
+            media_desc.formats = [int(x) for x in parts[3:]]
+        else:
+            media_desc.formats = parts[3:]
+        return media_desc
 
     def __str__(self):
         # media line

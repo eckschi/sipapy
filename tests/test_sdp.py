@@ -22,23 +22,14 @@ class TestSdp(unittest.TestCase):
             'a=fmtp:101 0-16\r\n'
             'a=ssrc:1060656687 cname:5025109619374fa3\r\n')
 
-        sdp = SdpBody(sdp_data)
+        sdp = SdpBody.from_string(sdp_data)
         self.assertEqual(sdp.v_header, '0')
 
         self.assertEqual(len(sdp.media_lines), 1)
         self.assertEqual(sdp.media_lines[0].type, MediaType.AUDIO)
         self.assertEqual(sdp.media_lines[0].port, 4014)
         self.assertEqual(sdp.media_lines[0].c_header.addr, '10.172.68.90')
-        # self.assertEqual(sdp.media_lines[0].m_header.proto, 'RTP/AVP')
-        # self.assertEqual(sdp.media_lines[0].m_header.fmt, ['8', '0', '101'])
-        # self.assertEqual(sdp.media_lines[0].c_header.addr, 
-        for s in sdp.media_lines:
-            if type(s) is SdpMediaDescription:
-                port = s.port
-                addr = s.c_header.addr
-                print(f"Media port: {port}, address: {addr}")
-        #self.assertEqual(sdp.o_header['username'], '-')
-        #self.assertTrue(True)
+        self.assertEqual(sdp.media_lines[0].formats, [8, 0, 101])
 
     def test_sdp_rfc4566(self):
         sdp_data = (
@@ -54,7 +45,7 @@ class TestSdp(unittest.TestCase):
             'm=audio 49170 RTP/AVP 0\r\n'
             'm=video 51372 RTP/AVP 99\r\n'
             'a=rtpmap:99 h263-1998/90000\r\n')
-        sdp = SdpBody(sdp_data)
+        sdp = SdpBody.from_string(sdp_data)
         self.assertEqual(sdp.v_header, '0')
         self.assertEqual(sdp.o_header.username, 'jdoe')
         self.assertEqual(sdp.o_header.session_id, '2890844526')
@@ -91,7 +82,7 @@ class TestSdp(unittest.TestCase):
             'm=video 50000 RTP/AVP 97 98\r\n'
             'a=rtpmap:97 VP8/90000\r\n'
             'a=rtpmap:98 H264/90000\r\n')
-        sdp = SdpBody(sdp_data)
+        sdp = SdpBody.from_string(sdp_data)
         self.assertEqual(sdp.v_header, '0')
         self.assertEqual(len(sdp.media_lines), 2)
         self.assertEqual(sdp.media_lines[0].port, 49170)
