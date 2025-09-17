@@ -65,6 +65,10 @@ class SdpMediaDescription:
         self.other_attributes = []
         self.c_header = None
         self.codecs = {}
+        self.stype = ''
+        self.transport = ''
+        self.formats = []
+
         if body is not None:
             self.from_string(body)
 
@@ -87,9 +91,18 @@ class SdpMediaDescription:
             media_desc.formats = parts[3:]
         return media_desc
 
+    @classmethod
+    def from_values(cls, port, codec, clock_rate, channels=1, type=MediaType.AUDIO):
+        media_desc = cls()
+        media_desc.port = port
+        media_desc.type = type
+        media_desc.codecs = SdpCodecInfo(codec, clock_rate, channels)
+        return media_desc
+    
     def __str__(self):
         # media line
-        s = '%s %d %s' % (self.stype, self.port, self.transport)
+        stype = 'audio' if self.type == MediaType.AUDIO else 'video' 
+        s = '%s %d %s' % (stype, self.port, self.transport)
         if self.type in (MediaType.AUDIO, MediaType.VIDEO):
             for format in self.formats:
                 s += ' %d' % format
@@ -97,10 +110,10 @@ class SdpMediaDescription:
             for format in self.formats:
                 s += ' %s' % format
         # other headers
-        for name in self.all_headers:
-            header = getattr(self, name + '_header')
-            if header is not None:
-                s += '{}={}\r\n'.format(name, str(header))
+        # for name in self.all_headers:
+        #     header = getattr(self, name + '_header')
+        #     if header is not None:
+        #         s += '{}={}\r\n'.format(name, str(header))
         for header in self.other_attributes:
             s += 'a=%s\r\n' % str(header)
         return s
