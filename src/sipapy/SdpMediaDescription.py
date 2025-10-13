@@ -86,29 +86,34 @@ class SdpMediaDescription:
         else:
             media_desc.type = MediaType.OTHER
         if media_desc.type in (MediaType.AUDIO, MediaType.VIDEO):
-            media_desc.formats = [int(x) for x in parts[3:]]
+            media_desc.formats = [int(x) for x in parts[3:]] # formats obosolete?
         else:
             media_desc.formats = parts[3:]
         return media_desc
 
     @classmethod
-    def from_values(cls, port, codec, clock_rate, channels=1, type=MediaType.AUDIO):
+    def from_values(cls, port, rtpmap, codec, clock_rate, channels=1, type=MediaType.AUDIO):
         media_desc = cls()
+        media_desc.transport = 'RTP/AVP'
         media_desc.port = port
         media_desc.type = type
-        media_desc.codecs = SdpCodecInfo(codec, clock_rate, channels)
+        media_desc.codecs[rtpmap] = SdpCodecInfo(codec, clock_rate, channels)
         return media_desc
     
     def __str__(self):
         # media line
         stype = 'audio' if self.type == MediaType.AUDIO else 'video' 
-        s = '%s %d %s' % (stype, self.port, self.transport)
+        s = 'm=%s %d %s' % (stype, self.port, self.transport)
         if self.type in (MediaType.AUDIO, MediaType.VIDEO):
-            for format in self.formats:
-                s += ' %d' % format
+            for codec in self.codecs.keys():
+                s += ' %d' % codec
         else:
             for format in self.formats:
                 s += ' %s' % format
+
+        for codec in self.codecs:
+            s+='\n' + codec
+            
         # other headers
         # for name in self.all_headers:
         #     header = getattr(self, name + '_header')

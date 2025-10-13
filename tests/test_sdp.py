@@ -139,7 +139,7 @@ class TestSdp(unittest.TestCase):
                 atype='IP4',
                 addr='192.168.56.50')
         )
-        sdp.media_lines.append(SdpMediaDescription.from_values(46000, Codec.PCMA, 8000, 1))
+        sdp.media_lines.append(SdpMediaDescription.from_values(46000, 8, Codec.PCMA, 8000, 1))
         print(sdp)
 
         self.assertTrue(True)
