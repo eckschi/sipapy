@@ -46,6 +46,7 @@ class SdpBody:
     def __init__(self):
         self.a_headers = []
         self.media_lines = []
+        self.c_header = None
 
     @classmethod
     def from_string(cls, body):
@@ -66,7 +67,7 @@ class SdpBody:
             # parse the session level
             if not media_level:
                 if name == 'c':
-                    c_header = v
+                    inst.c_header = f_types[name](v)
                 elif name == 'a':
                     inst.a_headers.append(a_header(v))
                 else:
@@ -84,24 +85,19 @@ class SdpBody:
         if current_media is not None:
             inst.media_lines.append(current_media)
 
-        # post processing
-        # add the connection to all media media_lines that do not have it
-        if c_header is not None:
-            for section in inst.media_lines:
-                if section.c_header == None:
-                    section.addHeader('c', c_header)
-            if len(inst.media_lines) == 0:
-                inst.addHeader('c', c_header)
         # Do some sanity checking, RFC4566
         for header_name in [x + '_header' for x in inst.top_hdrs_req]:
-            if getattr(inst, header_name) == None:
+            if not hasattr(inst, header_name) or getattr(inst, header_name) is None:
                 raise Exception(
                     f'Mandatory "{header_name[0]}=" session header is missing')
         for section in inst.media_lines:
-            for header_name in [x + '_header' for x in inst.sect_hdrs_req]:
-                if getattr(section, header_name) == None:
-                    raise Exception(
-                        f'Mandatory "{header_name[0]}=" media header is missing')
+            # If the session-level `c` header is not present, then each media
+            # section must have one.
+            if inst.c_header is None:
+                for header_name in [x + '_header' for x in inst.sect_hdrs_req]:
+                    if not hasattr(section, header_name) or getattr(section, header_name) is None:
+                        raise Exception(
+                            f'Mandatory "{header_name[0]}=" media header is missing')
 
         return inst
     
@@ -118,23 +114,6 @@ class SdpBody:
 
     def __str__(self):
         s = ''
-        if len(self.media_lines) == 1 and self.media_lines[0].c_header is not None:
-            for name in self.first_half:
-                header = getattr(self, name + '_header')
-                if header is not None:
-                    s += '{}={}\r\n'.format(name, str(header))
-            s += 'c=%s\r\n' % str(self.media_lines[0].c_header)
-            for name in self.second_half:
-                header = getattr(self, name + '_header')
-                if header is not None:
-                    s += '{}={}\r\n'.format(name, str(header))
-            for header in self.a_headers:
-                s += 'a=%s\r\n' % str(header)
-            s += self.media_lines[0].localStr(noC=True)
-            return s
-        # Special code to optimize for the cases when there are many media streams pointing to
-        # the same IP. Only include c= header into the top section of the SDP and remove it from
-        # the streams that match.
         optimize_c_headers = False
         if len(self.media_lines) > 1 and self.c_header == None and self.media_lines[0].c_header != None and \
                 str(self.media_lines[0].c_header) == str(self.media_lines[1].c_header):
@@ -145,14 +124,18 @@ class SdpBody:
             media_lines_0_str = str(self.media_lines[0].c_header)
         if optimize_c_headers:
             for name in self.first_half:
-                header = getattr(self, name + '_header')
-                if header is not None:
-                    s += '{}={}\r\n'.format(name, str(header))
+                attr_name = name + '_header'
+                if attr_name in self.__dict__:
+                    header = getattr(self, name + '_header')
+                    if header is not None:
+                        s += '{}={}\r\n'.format(name, str(header))
             s += 'c=%s\r\n' % media_lines_0_str
             for name in self.second_half:
-                header = getattr(self, name + '_header')
-                if header is not None:
-                    s += '{}={}\r\n'.format(name, str(header))
+                attr_name = name + '_header'
+                if attr_name in self.__dict__:
+                    header = getattr(self, name + '_header')
+                    if header is not None:
+                        s += '{}={}\r\n'.format(name, str(header))
         else:
             for name in self.all_headers:
                 attr_name = name + '_header'
@@ -163,28 +146,28 @@ class SdpBody:
         for header in self.a_headers:
             s += 'a=%s\r\n' % str(header)
         for section in self.media_lines:
-            if optimize_c_headers and section.c_header != None and \
-                    str(section.c_header) == media_lines_0_str:
-                s += section.localStr(noC=True)
-            else:
-                s += str(section)
+            s += str(section)
         return s
 
     def localStr(self, local_addr=None, local_port=None):
         s = ''
         if len(self.media_lines) == 1 and self.media_lines[0].c_header is not None:
             for name in self.first_half:
-                header = getattr(self, name + '_header')
-                if header is not None:
-                    s += '{}={}\r\n'.format(name,
-                                            header.localStr(local_addr, local_port))
+                attr_name = name + '_header'
+                if attr_name in self.__dict__:
+                    header = getattr(self, name + '_header')
+                    if header is not None:
+                        s += '{}={}\r\n'.format(name,
+                                                header.localStr(local_addr, local_port))
             s += 'c=%s\r\n' % self.media_lines[0].c_header.localStr(
                 local_addr, local_port)
             for name in self.second_half:
-                header = getattr(self, name + '_header')
-                if header is not None:
-                    s += '{}={}\r\n'.format(name,
-                                            header.localStr(local_addr, local_port))
+                attr_name = name + '_header'
+                if attr_name in self.__dict__:
+                    header = getattr(self, name + '_header')
+                    if header is not None:
+                        s += '{}={}\r\n'.format(name,
+                                                header.localStr(local_addr, local_port))
             for header in self.a_headers:
                 s += 'a=%s\r\n' % str(header)
             s += self.media_lines[0].localStr(
@@ -204,25 +187,31 @@ class SdpBody:
                 local_addr, local_port)
         if optimize_c_headers:
             for name in self.first_half:
-                header = getattr(self, name + '_header')
-                if header is not None:
-                    s += '{}={}\r\n'.format(name,
-                                            header.localStr(local_addr, local_port))
+                attr_name = name + '_header'
+                if attr_name in self.__dict__:
+                    header = getattr(self, name + '_header')
+                    if header is not None:
+                        s += '{}={}\r\n'.format(name,
+                                                header.localStr(local_addr, local_port))
             s += 'c=%s\r\n' % media_lines_0_str
             for name in self.second_half:
-                header = getattr(self, name + '_header')
-                if header is not None:
-                    s += '{}={}\r\n'.format(name,
-                                            header.localStr(local_addr, local_port))
+                attr_name = name + '_header'
+                if attr_name in self.__dict__:
+                    header = getattr(self, name + '_header')
+                    if header is not None:
+                        s += '{}={}\r\n'.format(name,
+                                                header.localStr(local_addr, local_port))
         else:
             for name in self.all_headers:
-                header = getattr(self, name + '_header')
-                if header is not None:
-                    s += '{}={}\r\n'.format(name,
-                                            header.localStr(local_addr, local_port))
+                attr_name = name + '_header'
+                if attr_name in self.__dict__:
+                    header = self.__dict__[attr_name]
+                    if header is not None:
+                        s += '{}={}\r\n'.format(name,
+                                                header.localStr(local_addr, local_port))
         for header in self.a_headers:
             s += 'a=%s\r\n' % str(header)
-        for section in self.media_lines_lines:
+        for section in self.media_lines:
             if optimize_c_headers and section.c_header != None and \
                     section.c_header.localStr(local_addr, local_port) == media_lines_0_str:
                 s += section.localStr(local_addr, local_port, noC=True)
@@ -231,8 +220,8 @@ class SdpBody:
         return s
 
     def __iadd__(self, other):
-        if len(self.media_lines_lines) > 0:
-            self.media_lines_lines[-1].addHeader(*other.strip().split('=', 1))
+        if len(self.media_lines) > 0:
+            self.media_lines[-1].addHeader(*other.strip().split('=', 1))
         else:
             self.addHeader(*other.strip().split('=', 1))
         return self

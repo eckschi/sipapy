@@ -110,26 +110,29 @@ class SdpMediaDescription:
         else:
             for format in self.formats:
                 s += ' %s' % format
+        s += '\r\n'
+
+        if self.c_header is not None:
+            s += 'c={}\r\n'.format(str(self.c_header))
 
         # Add rtpmap attributes
         for payload_type, codec_info in self.codecs.items():
-            s += '\r\na=rtpmap:{} {}'.format(payload_type, str(codec_info))
+            s += 'a=rtpmap:{} {}\r\n'.format(payload_type, str(codec_info))
 
         # Add other attributes (a= lines, like fmtp, sendrecv, etc.)
         for header in self.other_attributes:
-            s += '\r\na=%s' % str(header)
+            s += 'a=%s\r\n' % str(header)
 
         return s
 
     def localStr(self, local_addr=None, local_port=None, noC=False):
         s = ''
-        for name in self.all_headers:
-            if noC and name == 'c':
-                continue
-            header = getattr(self, name + '_header')
-            if header is not None:
-                s += '{}={}\r\n'.format(name,
-                                        header.localStr(local_addr, local_port))
+        if not noC and self.c_header is not None:
+            s += 'c={}\r\n'.format(self.c_header.localStr(local_addr, local_port))
+        # Add rtpmap attributes
+        for payload_type, codec_info in self.codecs.items():
+            s += 'a=rtpmap:{} {}\r\n'.format(payload_type, str(codec_info))
+        # Add other attributes (a= lines)
         for header in self.other_attributes:
             s += 'a=%s\r\n' % str(header)
         return s
@@ -143,23 +146,21 @@ class SdpMediaDescription:
         fmtp_regex = re.compile(r'fmtp:(\d+)\s+(.+)')
 
         if name == 'a':
-            self.other_attributes.append(a_header(header))
-
             rtpmap_match = rtpmap_regex.search(header)
             if rtpmap_match:
                 payload_type = int(rtpmap_match.group(1))
                 codec_name = rtpmap_match.group(2)
                 clock_rate = int(rtpmap_match.group(3))
                 channels = int(rtpmap_match.group(4)) if rtpmap_match.group(4) else 1
-                print(f"Parsed rtpmap - Payload Type: {payload_type}, Codec: {codec_name}, Clock Rate: {clock_rate}, Channels: {channels}")
                 self.codecs[payload_type] = SdpCodecInfo(codec_name, clock_rate, channels)
-                print(f"Created SdpCodecInfo: {self.codecs[payload_type]}")
+                return
+
+            self.other_attributes.append(a_header(header))
 
             fmtp_match = fmtp_regex.search(header)
             if fmtp_match:
                 payload_type = int(fmtp_match.group(1))
                 params = fmtp_match.group(2)
-                print(f"Parsed fmtp - Payload Type: {payload_type}, Params: {params}")
                 if payload_type in self.codecs:
                     self.codecs[payload_type].fmtp = params
 
