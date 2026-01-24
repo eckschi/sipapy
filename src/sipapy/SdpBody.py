@@ -6,7 +6,7 @@
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
 #
-# 1. Redistributions of source code must retain the above copyright notice, this
+# 1. Redistributions of code must retain the above copyright notice, this
 # list of conditions and the following disclaimer.
 #
 # 2. Redistributions in binary form must reproduce the above copyright notice,
@@ -130,7 +130,7 @@ class SdpBody:
                     s += '{}={}\r\n'.format(name, str(header))
             for header in self.a_headers:
                 s += 'a=%s\r\n' % str(header)
-            s += self.media_lines_lines[0].localStr(noC=True)
+            s += self.media_lines[0].localStr(noC=True)
             return s
         # Special code to optimize for the cases when there are many media streams pointing to
         # the same IP. Only include c= header into the top section of the SDP and remove it from
@@ -142,7 +142,7 @@ class SdpBody:
             # the same IP. Only include c= header into the top section of the SDP and remove it from
             # the streams that match.
             optimize_c_headers = True
-            media_lines_0_str = str(self.media_lines_lines[0].c_header)
+            media_lines_0_str = str(self.media_lines[0].c_header)
         if optimize_c_headers:
             for name in self.first_half:
                 header = getattr(self, name + '_header')
@@ -154,10 +154,12 @@ class SdpBody:
                 if header is not None:
                     s += '{}={}\r\n'.format(name, str(header))
         else:
-            for name in self.top_hdrs_req:#all_headers:
-                header = getattr(self, name + '_header')
-                if header is not None:
-                    s += '{}={}\r\n'.format(name, str(header))
+            for name in self.all_headers:
+                attr_name = name + '_header'
+                if attr_name in self.__dict__:
+                    header = self.__dict__[attr_name]
+                    if header is not None:
+                        s += '{}={}\r\n'.format(name, str(header))
         for header in self.a_headers:
             s += 'a=%s\r\n' % str(header)
         for section in self.media_lines:

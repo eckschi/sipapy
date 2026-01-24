@@ -111,16 +111,14 @@ class SdpMediaDescription:
             for format in self.formats:
                 s += ' %s' % format
 
-        for codec in self.codecs:
-            s+='\n' + codec
-            
-        # other headers
-        # for name in self.all_headers:
-        #     header = getattr(self, name + '_header')
-        #     if header is not None:
-        #         s += '{}={}\r\n'.format(name, str(header))
+        # Add rtpmap attributes
+        for payload_type, codec_info in self.codecs.items():
+            s += '\r\na=rtpmap:{} {}'.format(payload_type, str(codec_info))
+
+        # Add other attributes (a= lines, like fmtp, sendrecv, etc.)
         for header in self.other_attributes:
-            s += 'a=%s\r\n' % str(header)
+            s += '\r\na=%s' % str(header)
+
         return s
 
     def localStr(self, local_addr=None, local_port=None, noC=False):
