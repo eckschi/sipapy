@@ -10,7 +10,7 @@ from sipapy.SdpConnection import SdpConnection
 from sipapy.SdpGeneric import SdpGeneric
 
 class TestSdpGeneration(unittest.TestCase):
-    def test_generation_1(self):
+    def test_basic_audio_sdp_generation(self):
         origin = SdpOrigin(address="192.168.2.220")
         sdp = SdpBody.from_values(subject="Test Session", origin=origin)
         media = SdpMediaDescription.from_values(port=5061, rtpmap=0, codec="PCMU", clock_rate=8000)
@@ -26,7 +26,7 @@ a=rtpmap:0 PCMU/8000/1\r
 
         self.assertEqual(str(sdp).strip(), expected_sdp.strip())
 
-    def test_full_sdp_generation_with_session_attributes(self):
+    def test_complex_sdp_with_multiple_media_and_attributes(self):
         origin = SdpOrigin(address="192.168.1.100")
         origin.username = "testuser"
         connection = SdpConnection.from_values("IN", "IP4", "192.168.1.100")
@@ -75,7 +75,7 @@ a=recvonly"""
         parsed_sdp = SdpBody.from_string(expected_sdp)
         self.assertEqual(str(parsed_sdp).strip(), expected_sdp.strip())
 
-    def test_roundtrip_example_1(self):
+    def test_roundtrip_sdp_with_g729_codec(self):
         sdp_body = """v=0\r
 o=Evil 3559 3228 IN IP4 192.168.2.122\r
 s=SIP Call\r
@@ -87,7 +87,7 @@ a=rtpmap:18 G729/8000/1\r
         sdp = SdpBody.from_string(sdp_body)
         self.assertEqual(str(sdp).strip(), sdp_body.strip())
 
-    def test_roundtrip_example_2(self):
+    def test_roundtrip_sdp_with_pcmu_codec(self):
         sdp_body = """v=0\r
 o=UserA 2890844526 2890844527 IN IP4 here.com\r
 s=Session SDP\r
@@ -98,7 +98,7 @@ a=rtpmap:0 PCMU/8000/1""" # No trailing \r\n, as it's stripped by .strip()
         sdp = SdpBody.from_string(sdp_body)
         self.assertEqual(str(sdp).strip(), sdp_body.strip())
 
-    def test_ipv6_and_attributes(self):
+    def test_ipv6_sdp_with_encryption_and_media_attributes(self):
         origin = SdpOrigin(address="2001:db8::1")
         origin.address_type = 'IP6'
         connection = SdpConnection.from_values("IN", "IP6", "2001:db8::2")
