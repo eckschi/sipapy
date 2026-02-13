@@ -42,7 +42,7 @@ class SipCore:
     def start(self, host='192.168.56.104', port=5060):
         # Start the server in the background
         self.server_task = asyncio.create_task(
-            self.server.start_server(host, 5060, data_received_callback=self.data_received))
+            self.server.start_server(host, port, data_received_callback=self.data_received))
 
     def stop(self):
         # Stop the server
