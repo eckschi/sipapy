@@ -100,7 +100,7 @@ class SdpMediaDescription:
         media_desc.codecs[rtpmap] = SdpCodecInfo(codec, clock_rate, channels)
         return media_desc
     
-    def __str__(self):
+    def __str__(self, suppress_c_header=False):
         # media line
         stype = 'audio' if self.type == MediaType.AUDIO else 'video' 
         s = 'm=%s %d %s' % (stype, self.port, self.transport)
@@ -112,7 +112,7 @@ class SdpMediaDescription:
                 s += ' %s' % format
         s += '\r\n'
 
-        if self.c_header is not None:
+        if self.c_header is not None and not suppress_c_header:
             s += 'c={}\r\n'.format(str(self.c_header))
 
         # Add rtpmap attributes
@@ -120,8 +120,11 @@ class SdpMediaDescription:
             s += 'a=rtpmap:{} {}\r\n'.format(payload_type, str(codec_info))
 
         # Add other attributes (a= lines, like fmtp, sendrecv, etc.)
+        # Skip rtpmap attributes to avoid duplicates (they're already output from codecs)
+        # Keep fmtp attributes as they may have additional parameters
         for header in self.other_attributes:
-            s += 'a=%s\r\n' % str(header)
+            if header.name != 'rtpmap':
+                s += 'a=%s\r\n' % str(header)
 
         return s
 
@@ -133,8 +136,11 @@ class SdpMediaDescription:
         for payload_type, codec_info in self.codecs.items():
             s += 'a=rtpmap:{} {}\r\n'.format(payload_type, str(codec_info))
         # Add other attributes (a= lines)
+        # Skip rtpmap attributes to avoid duplicates (they're already output from codecs)
+        # Keep fmtp attributes as they may have additional parameters
         for header in self.other_attributes:
-            s += 'a=%s\r\n' % str(header)
+            if header.name != 'rtpmap':
+                s += 'a=%s\r\n' % str(header)
         return s
 
     def __iadd__(self, other):
@@ -146,6 +152,10 @@ class SdpMediaDescription:
         fmtp_regex = re.compile(r'fmtp:(\d+)\s+(.+)')
 
         if name == 'a':
+            # Always add to other_attributes first
+            self.other_attributes.append(a_header(header))
+            
+            # Parse rtpmap attributes into codecs
             rtpmap_match = rtpmap_regex.search(header)
             if rtpmap_match:
                 payload_type = int(rtpmap_match.group(1))
@@ -153,10 +163,8 @@ class SdpMediaDescription:
                 clock_rate = int(rtpmap_match.group(3))
                 channels = int(rtpmap_match.group(4)) if rtpmap_match.group(4) else 1
                 self.codecs[payload_type] = SdpCodecInfo(codec_name, clock_rate, channels)
-                return
 
-            self.other_attributes.append(a_header(header))
-
+            # Parse fmtp attributes and add to corresponding codec
             fmtp_match = fmtp_regex.search(header)
             if fmtp_match:
                 payload_type = int(fmtp_match.group(1))

@@ -85,6 +85,12 @@ class SdpBody:
         if current_media is not None:
             inst.media_lines.append(current_media)
 
+        # Inherit session-level connection header to media sections that don't have one
+        if inst.c_header is not None:
+            for section in inst.media_lines:
+                if section.c_header is None:
+                    section.c_header = inst.c_header
+
         # Do some sanity checking, RFC4566
         for header_name in [x + '_header' for x in inst.top_hdrs_req]:
             if not hasattr(inst, header_name) or getattr(inst, header_name) is None:
@@ -146,7 +152,17 @@ class SdpBody:
         for header in self.a_headers:
             s += 'a=%s\r\n' % str(header)
         for section in self.media_lines:
-            s += str(section)
+            # If this media section has the same c_header as the session-level one,
+            # and we're not in optimization mode, suppress the media-level c_header
+            # to avoid duplication
+            suppress_media_c_header = False
+            if (self.c_header is not None and 
+                section.c_header is not None and
+                str(self.c_header) == str(section.c_header) and
+                not optimize_c_headers):
+                suppress_media_c_header = True
+            
+            s += section.__str__(suppress_c_header=suppress_media_c_header)
         return s
 
     def localStr(self, local_addr=None, local_port=None):
