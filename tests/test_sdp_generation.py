@@ -1,5 +1,8 @@
 import unittest
-from . import context
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 from sipapy.SdpBody import SdpBody
 from sipapy.SdpOrigin import SdpOrigin
 from sipapy.SdpMediaDescription import SdpMediaDescription, MediaType
