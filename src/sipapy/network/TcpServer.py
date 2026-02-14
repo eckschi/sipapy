@@ -1,5 +1,7 @@
 import asyncio
 import uvloop
+from .TransportServer import TransportServer
+from .TransportType import TransportType
 
 # Set uvloop as the default event loop policy
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
@@ -32,10 +34,13 @@ class TcpServerconnection(asyncio.Protocol):
         if self.transport:
             self.transport.write(data.encode())  # Send data to the connected client
 
-class TcpServer:
+class TcpServer(TransportServer):
     def __init__(self):
+        super().__init__()
         self.connections: dict[int, TcpServerconnection] = {}
         self.next_conn_id = 0
+        self._transport_type = TransportType.TCP
+        self.server = None
 
     def add_connection(self, connection):
         """Add a connection instance to the connections list."""
@@ -53,29 +58,51 @@ class TcpServer:
         for connection in self.connections:
             connection.send_data(message)
         
-    def send_to(self, conn_id, message):
-        connection = self.connections.get(conn_id)
-        if connection:
-            connection.send_data(message)
+    def send_data(self, connection, data, address=None):
+        """Send data to a specific connection."""
+        if isinstance(connection, int):
+            # If connection is an ID, look it up
+            conn = self.connections.get(connection)
+            if conn:
+                conn.send_data(data)
+            else:
+                print('Connection not found')
+        elif hasattr(connection, 'send_data'):
+            # If connection is a TcpServerconnection object
+            connection.send_data(data)
         else:
-            print('do hots wos')
+            print('Invalid connection type')
 
     async def start_server(self, host, port, data_received_callback=None):
+        self.host = host
+        self.port = port
+        self.data_received_callback = data_received_callback
+        
         loop = asyncio.get_event_loop()
-        server = await loop.create_server(
+        self.server = await loop.create_server(
             lambda: TcpServerconnection(self, data_received_callback),
             host, port
         )
-        addr = server.sockets[0].getsockname()
+        addr = self.server.sockets[0].getsockname()
         print(f'Serving on {addr}')
+        self.running = True
         try:
-            await server.serve_forever()
+            await self.server.serve_forever()
         except asyncio.CancelledError:
             pass  # Handle the cancelation gracefully when server is stopped
+        finally:
+            self.running = False
 
-    def stop_server(self):
+    async def stop_server(self):
         """Gracefully stop the server."""
         print("Stopping the server...")
-        for connection in self.connections:
-            connection.transport.close()            
+        if self.server:
+            self.server.close()
+            await self.server.wait_closed()
+            self.server = None
+        
+        for connection in self.connections.values():
+            connection.transport.close()
+        self.connections.clear()
+        self.running = False            
 

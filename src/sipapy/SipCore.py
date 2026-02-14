@@ -7,6 +7,11 @@ import time
 from loguru import logger
 
 from sipapy.network.TcpServer import TcpServer
+from sipapy.network.UdpServer import UdpServer
+from sipapy.network.TransportType import TransportType
+
+# Re-export TransportType for convenience
+__all__ = ['SipCore', 'TransportType']
 from sipapy.core.Exceptions import dump_exception
 # from sipapy.time.MonoTime import MonoTime
 # from sipapy.time.Timeout import Timeout
@@ -32,24 +37,54 @@ asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
 class SipCore:
-    def __init__(self, receive_callback):
+    def __init__(self, receive_callback, transports=None):
         self.server = TcpServer()
+        self.transports = []  # List of all transport servers
         self.server_task = None
+        self.transport_tasks = {}  # Dict to store transport tasks
         self.recvRequest = receive_callback
         self.client_transactions = {}  # client transactions
         self.server_transactions = {}  # server transactions
+        
+        # Setup transports based on the transports parameter
+        if transports is None:
+            # Default: only TCP
+            transports = [TransportType.TCP]
+        
+        # Add additional transport servers (excluding TCP which is handled separately)
+        for transport_type in transports:
+            if transport_type == TransportType.UDP:
+                self.transports.append(UdpServer())
+            elif transport_type == TransportType.TLS:
+                # TODO: Implement TLS support
+                pass
+            # TCP is handled separately as self.server
 
     def start(self, host='192.168.56.104', port=5060):
-        # Start the server in the background
+        # Start the TCP server in the background
         self.server_task = asyncio.create_task(
             self.server.start_server(host, port, data_received_callback=self.data_received))
+        
+        # Start additional transport servers
+        for transport in self.transports:
+            transport_task = asyncio.create_task(
+                transport.start_server(host, port, data_received_callback=self.data_received))
+            self.transport_tasks[transport] = transport_task
 
-    def stop(self):
-        # Stop the server
-        self.server.stop_server()
+    async def stop(self):
+        # Stop additional transport servers first
+        for transport in self.transports:
+            if transport in self.transport_tasks:
+                await transport.stop_server()
+                del self.transport_tasks[transport]
+        
+        # Stop the TCP server (if it's not already stopped as a transport)
+        if self.server not in self.transports:
+            await self.server.stop_server()
+        self.server_task = None
 
     # User code that interacts with the server and provides a data-received callback
-    def data_received(self, connection, data):
+    async def data_received(self, connection, data):
         address = connection.peername
         rtime = time.monotonic()
 
@@ -140,7 +175,7 @@ class SipCore:
             #             req.nated = True
             req.setSource(address)
             try:
-                self.incomingRequest(req, checksum, tids, connection)
+                await self.incomingRequest(req, checksum, tids, connection)
             # except RtpProxyError as ex:
             #     resp = ex.getResponse(req)
             #     self.sendResponse(resp)
@@ -155,7 +190,7 @@ class SipCore:
                 self.sendResponse(resp)
 
     # Server transaction methods
-    def incomingRequest(self, msg, checksum, tids, connection):
+    async def incomingRequest(self, msg, checksum, tids, connection):
         for tid in tids:
             if tid in self.client_transactions:
                 logger.info('Loop Detected')
@@ -251,7 +286,12 @@ class SipCore:
             #     cobj = consumer.cobj.isYours(msg)
             #     if cobj != None:
             #         rval = cobj.recvRequest(msg, t)
-            rval = self.recvRequest(msg, t)
+            # Handle both async and sync callbacks
+            callback_result = self.recvRequest(msg, t)
+            if asyncio.iscoroutine(callback_result):
+                rval = await callback_result
+            else:
+                rval = callback_result
 
             #         break
             # else:
@@ -267,7 +307,13 @@ class SipCore:
             #     t.cleanup()
             #     return
             # resp, t.cancel_cb, t.noack_cb = rval
-            resp = rval[0]
+            
+            # Handle case where callback returns just a response vs tuple
+            if isinstance(rval, tuple) and len(rval) >= 1:
+                resp = rval[0]
+            else:
+                resp = rval
+                
             if resp != None:
                 self.sendResponse(resp, t)
 
@@ -330,7 +376,23 @@ class SipCore:
     def transmitMsg(self, connection, msg, address):
         data = msg.localStr('192.168.56.104')
         logger.debug(f'SENDING message to {address[0]}:{address[1]}\n{data}')
-        connection.send_data(data)
+        
+        # Check if this is a UDP connection (has send_to method)
+        if hasattr(connection, 'send_to'):
+            # UDP connection - use old method for backward compatibility
+            connection.send_to(address, data)
+        elif hasattr(connection, 'send_data'):
+            # TCP connection or new-style connection
+            if hasattr(connection, 'peername'):
+                # TCP connection - use connection directly
+                connection.send_data(data)
+            else:
+                # UDP-style connection - need to find the right transport
+                # For now, send via UDP if available
+                for transport in self.transports:
+                    if transport.get_transport_type() == TransportType.UDP:
+                        transport.send_data(data, address)
+                        break
 
     # def transmitData(self, userv, data, address, cachesum=None):
     #     userv.send_to(data, address)
